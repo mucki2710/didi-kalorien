@@ -1,7 +1,4 @@
-node_modules/
 .env
-.runtime/
 *.log
-dist/
 data/
 .DS_Store
