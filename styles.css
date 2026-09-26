@@ -1,0 +1,263 @@
+* {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #f5f6f8;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #7b8495;
+      --primary: #22a06b;
+      --primary-dark: #168456;
+      --border: #e8eaf0;
+      --danger: #d94c4c;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding: 20px 16px 110px;
+    }
+
+    h1, h2, h3, p {
+      margin-top: 0;
+    }
+
+    .header {
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      margin-bottom: 4px;
+      font-size: 28px;
+    }
+
+    .date {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 20px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 5px 25px rgba(20, 30, 50, 0.06);
+    }
+
+    .calorie-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: end;
+      margin-bottom: 12px;
+    }
+
+    .calorie-number {
+      font-size: 32px;
+      font-weight: 750;
+    }
+
+    .goal {
+      color: var(--muted);
+    }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      background: #e9edf0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--primary);
+      border-radius: inherit;
+      transition: width .3s;
+    }
+
+    .macro-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .macro {
+      background: #f7f8fa;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .macro strong {
+      display: block;
+      font-size: 17px;
+    }
+
+    .macro span {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .meal {
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .meal:last-child {
+      border-bottom: 0;
+    }
+
+    .meal small {
+      color: var(--muted);
+    }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 15px 0;
+    }
+
+    .camera-button {
+      position: fixed;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(calc(100% - 32px), 488px);
+      border: 0;
+      background: var(--primary);
+      color: white;
+      border-radius: 18px;
+      padding: 17px;
+      font-size: 17px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(34, 160, 107, .3);
+    }
+
+    .camera-button:hover {
+      background: var(--primary-dark);
+    }
+
+    #photoInput {
+      display: none;
+    }
+
+    .preview {
+      display: none;
+      width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      border-radius: 16px;
+      margin-bottom: 15px;
+    }
+
+    .analysis {
+      display: none;
+    }
+
+    .food-row {
+      display: grid;
+      grid-template-columns: 1fr 75px 85px;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px;
+      font: inherit;
+    }
+
+    .food-kcal {
+      text-align: right;
+      font-weight: 650;
+    }
+
+    .analysis-total {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 18px;
+      font-size: 20px;
+      font-weight: 750;
+    }
+
+    .save-button {
+      width: 100%;
+      border: 0;
+      background: var(--text);
+      color: white;
+      padding: 14px;
+      border-radius: 14px;
+      font-weight: 700;
+      font-size: 16px;
+      margin-top: 16px;
+      cursor: pointer;
+    }
+
+    .status {
+      display: none;
+      text-align: center;
+      padding: 18px;
+      color: var(--muted);
+    }
+
+    .delete {
+      border: 0;
+      background: transparent;
+      color: var(--danger);
+      cursor: pointer;
+      margin-left: 8px;
+    }
+  
+    button:disabled { opacity: .55; cursor: wait; }
+    .notice { color: var(--muted); font-size: 14px; line-height: 1.5; }
+    .message { background: #fff4dd; color: #604000; padding: 12px; border-radius: 12px; margin-bottom: 16px; }
+    .error { background: #fff0f0; color: #982b2b; }
+    [hidden] { display: none !important; }
+    .analysis-total { gap: 12px; }
+    .food-row { grid-template-columns: minmax(0, 1fr) 90px 80px; }
+    .food-row > :first-child, .meal > :first-child { overflow-wrap: anywhere; min-width: 0; }
+    .meal { gap: 12px; }
+    .meal > :last-child { flex-shrink: 0; text-align: right; }
+    .food-row label { font-size: 12px; color: var(--muted); }
+    input:focus-visible, button:focus-visible { outline: 3px solid #168456; outline-offset: 3px; }
+    .secondary { background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; cursor: pointer; margin-top: 10px; }
+    .status { line-height: 1.5; }
+    @media (max-width: 360px) { .food-row { grid-template-columns: minmax(0, 1fr) 75px 65px; gap: 5px; } }
+
+.calendar-row { display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; gap: 8px; margin-top: 8px; }
+.calendar-row .secondary { margin-top: 0; font-size: 22px; padding: 4px; }
+.calendar-row input { min-width: 0; }
+.calendar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.calendar-actions .secondary { font: inherit; font-size: 14px; text-decoration: none; }
+
+summary { cursor: pointer; font-weight: 700; }
+#settings label { display: block; margin-top: 14px; margin-bottom: 6px; }
+#settings .checkbox { display: flex; gap: 10px; align-items: center; }
+.checkbox input { width: 20px; height: 20px; flex-shrink: 0; }
+#settings h3 { margin-top: 24px; }
+.camera-button { bottom: max(22px, env(safe-area-inset-bottom)); }
+.app { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }

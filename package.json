@@ -1,0 +1,25 @@
+{
+  "name": "didi-kalorien",
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node static-server.js",
+    "dev": "node --watch static-server.js",
+    "test": "node --test test/*.test.js",
+    "test:browser": "node test/browser.mjs",
+    "start:legacy": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "multer": "^2.0.0",
+    "openai": "^5.0.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
