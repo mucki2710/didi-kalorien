@@ -1,6 +1,11 @@
+node_modules/
 .env
-didi-key
-backups/
+.runtime/
 *.log
+dist/
 data/
 .DS_Store
+
+# Local project secrets and data
+didi-key
+backups/

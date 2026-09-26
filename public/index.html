@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>Didi Kalorien</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Didi">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.openai.com; img-src 'self' blob: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+
+  <link rel="stylesheet" href="./styles.css">
+</head>
+
+<body>
+
+<div class="app">
+
+  <header class="header">
+    <h1>🥗 Didi</h1>
+    <div class="date" id="date"></div>
+    <p class="notice" id="connection">Lokal auf diesem Gerät</p>
+  </header>
+
+  <div id="message" class="message" role="status" hidden></div>
+
+  <section class="card" aria-label="Kalender">
+    <label for="dayPicker">Tag auswählen</label>
+    <div class="calendar-row">
+      <button id="previousDay" class="secondary" type="button" aria-label="Vorheriger Tag">‹</button>
+      <input id="dayPicker" type="date" required aria-label="Tag auswählen">
+      <button id="nextDay" class="secondary" type="button" aria-label="Nächster Tag">›</button>
+    </div>
+    <div class="calendar-actions">
+      <button id="todayButton" class="secondary" type="button">Heute</button>
+      <button id="reloadDay" class="secondary" type="button">Neu laden</button>
+      <button id="csvDownload" class="secondary" type="button">Tag als CSV</button>
+    </div>
+  </section>
+  <section class="card">
+    <div class="calorie-row">
+      <div>
+        <div class="calorie-number">
+          <span id="totalCalories">0</span>
+          <small>kcal</small>
+        </div>
+        <div class="goal">von 2.200 kcal</div>
+      </div>
+
+      <strong id="remaining">2.200 übrig</strong>
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="macro-grid">
+      <div class="macro">
+        <strong id="protein">0 g</strong>
+        <span>Protein</span>
+      </div>
+
+      <div class="macro">
+        <strong id="carbs">0 g</strong>
+        <span>Kohlenhydrate</span>
+      </div>
+
+      <div class="macro">
+        <strong id="fat">0 g</strong>
+        <span>Fett</span>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="section-title">
+      <h2 id="dayTitle">Heute</h2>
+    </div>
+
+    <div id="mealList"></div>
+  </section>
+
+
+  <section class="card analysis" id="analysisCard">
+
+    <h2>Fotoanalyse</h2>
+
+    <img id="preview" class="preview" alt="Mahlzeit">
+
+    <div class="status" id="status" role="status" aria-live="polite">
+      🔍 Mahlzeit wird analysiert …
+    </div>
+
+    <div id="result">
+      <p>
+        Erkannte Lebensmittel und geschätzte Mengen.
+        Du kannst die Grammangaben korrigieren.
+      </p>
+
+      <p id="analysisNote" class="notice"></p>
+      <div id="foodList"></div>
+
+      <div class="analysis-total">
+        <span>Gesamt</span>
+        <span id="analysisCalories">0 kcal</span>
+      </div>
+
+      <p id="saveDate" class="notice"></p>
+      <button class="save-button" id="saveButton" type="button">
+        Mahlzeit speichern
+      </button>
+    </div>
+    <button class="secondary" id="cancelButton" type="button">Verwerfen</button>
+  </section>
+  <section class="card" aria-label="Sicherung">
+    <h2>Deine Daten</h2>
+    <p class="notice">Mahlzeiten bleiben auf diesem Gerät. Sichere sie regelmäßig als CSV in „Dateien“. Beim Löschen der Website-Daten können sie verloren gehen.</p>
+    <button id="exportAll" class="secondary" type="button">Alle Tage als CSV sichern</button>
+    <button id="importButton" class="secondary" type="button">CSV importieren</button>
+    <button id="protectStorage" class="secondary" type="button">Gerätespeicher anfragen</button>
+    <input id="csvInput" type="file" accept=".csv,text/csv" hidden>
+    <p class="notice">Eine vorhandene meals.csv aus der bisherigen Server-App kannst du hier importieren. Vorhandene Mahlzeiten werden nicht überschrieben.</p>
+  </section>
+  <details id="settings" class="card">
+    <summary>Einstellungen &amp; Installation</summary>
+    <form id="settingsForm">
+      <p class="notice">Für die Fotoanalyse wird dein Foto direkt an OpenAI gesendet. Es gelten die Kosten deines API-Kontos.</p>
+      <label for="apiKey">Dein OpenAI-API-Schlüssel</label>
+      <input id="apiKey" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="API-Schlüssel einfügen" required>
+      <label for="model">Modell</label>
+      <input id="model" type="text" value="gpt-6-luna" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+      <label class="checkbox"><input id="rememberKey" type="checkbox"> Schlüssel auf diesem Gerät merken</label>
+      <p class="notice">Ohne Häkchen bleibt der Schlüssel nur bis zum Neuladen verfügbar. Mit Häkchen liegt er unverschlüsselt im Website-Speicher; verwende das nur auf deinem persönlichen Gerät.</p>
+      <button class="secondary" type="submit">Einstellungen übernehmen</button>
+      <button id="forgetKey" class="secondary" type="button">Schlüssel entfernen</button>
+      <p class="notice" id="keyState"></p>
+    </form>
+    <h3>Auf dem iPad installieren</h3>
+    <p class="notice">Diese Seite in Safari über HTTPS öffnen → Teilen → Zum Home-Bildschirm → als Web-App öffnen. Danach Didi vom Home-Bildschirm starten und erst dort Schlüssel sowie CSV-Daten einrichten.</p>
+    <p id="offlineState" class="notice" role="status">Offline-Start wird vorbereitet …</p>
+  </details>
+  <p class="notice">Zur Analyse wird dein Foto an OpenAI gesendet. Kalorien und Nährwerte sind Schätzungen. Mahlzeiten werden lokal auf diesem Gerät gespeichert und sind über den Kalender abrufbar. CSV dient als Sicherung und zum Übertragen.</p>
+</div>
+
+
+<input
+  type="file"
+  id="photoInput"
+  accept="image/jpeg,image/png,image/webp"
+  capture="environment"
+/>
+
+<button class="camera-button" id="cameraButton" type="button">
+  📷 Mahlzeit fotografieren
+</button>
+
+
+<script src="./app.js" type="module"></script>
+</body>
+</html>
