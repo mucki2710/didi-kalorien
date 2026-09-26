@@ -39,6 +39,25 @@
       <button id="csvDownload" class="secondary" type="button">Tag als CSV</button>
     </div>
   </section>
+
+  <section class="card" aria-labelledby="rangeTitle">
+    <h2 id="rangeTitle">Zeitraum auswerten</h2>
+    <div class="range-grid">
+      <label for="rangeStart">Von
+        <input id="rangeStart" type="date" required>
+      </label>
+      <label for="rangeEnd">Bis
+        <input id="rangeEnd" type="date" required>
+      </label>
+    </div>
+    <button id="calculateRange" class="secondary" type="button">Kalorien berechnen</button>
+    <div id="rangeResult" class="range-result" role="status" aria-live="polite" hidden>
+      <span>Kalorien im Zeitraum</span>
+      <strong><span id="rangeCalories">0</span> kcal</strong>
+      <small id="rangeDetails"></small>
+    </div>
+  </section>
+
   <section class="card">
     <div class="calorie-row">
       <div>
@@ -117,7 +136,7 @@
   </section>
   <section class="card" aria-label="Sicherung">
     <h2>Deine Daten</h2>
-    <p class="notice">Mahlzeiten bleiben auf diesem Gerät. Sichere sie regelmäßig als CSV in „Dateien“. Beim Löschen der Website-Daten können sie verloren gehen.</p>
+    <p class="notice">Mahlzeiten bleiben auf diesem Gerät. CSV-Sicherungen enthalten Datum und Uhrzeit der Erfassung. Sichere sie regelmäßig in „Dateien“.</p>
     <button id="exportAll" class="secondary" type="button">Alle Tage als CSV sichern</button>
     <button id="importButton" class="secondary" type="button">CSV importieren</button>
     <button id="protectStorage" class="secondary" type="button">Gerätespeicher anfragen</button>

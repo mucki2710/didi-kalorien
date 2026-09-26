@@ -1,4 +1,4 @@
-const CACHE = 'didi-personal-v2';
+const CACHE = 'didi-personal-v3';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './csv.js', './storage.js', './openai.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));

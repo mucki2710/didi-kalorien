@@ -253,6 +253,14 @@
 .calendar-row input { min-width: 0; }
 .calendar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .calendar-actions .secondary { font: inherit; font-size: 14px; text-decoration: none; }
+.range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.range-grid label { color: var(--muted); font-size: 13px; }
+.range-grid input { margin-top: 6px; color: var(--text); }
+.range-result { margin-top: 16px; padding: 14px; border-radius: 14px; background: #f0f8f4; }
+.range-result > span, .range-result small { display: block; color: var(--muted); }
+.range-result strong { display: block; margin: 4px 0; font-size: 26px; }
+.range-result small { line-height: 1.4; }
+@media (max-width: 360px) { .range-grid { grid-template-columns: 1fr; } }
 
 summary { cursor: pointer; font-weight: 700; }
 #settings label { display: block; margin-top: 14px; margin-bottom: 6px; }

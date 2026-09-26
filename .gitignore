@@ -1,4 +1,5 @@
 .env
+didi-key
 *.log
 data/
 .DS_Store

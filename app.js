@@ -25,6 +25,14 @@ function localDate() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 }
+function localTime() {
+  const now = new Date();
+  return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+}
+function fileTimestamp() {
+  const now = new Date();
+  return `${localDate()}_${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
+}
 async function loadMeals() {
   const version = ++loadingVersion;
   meals = [];
@@ -188,7 +196,7 @@ async function saveMeal() {
   const values = totals(currentFoods);
   draftId ||= typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const meal = {
-    id: draftId, date: selectedDate,
+    id: draftId, date: selectedDate, time: localTime(),
     title: currentFoods.filter(food => food.grams > 0).slice(0, 2).map(food => food.name).join(' + '),
     foods: currentFoods.map(food => ({ ...food })),
     ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, Math.round(value)])),
@@ -237,7 +245,13 @@ function renderDashboard() {
     const title = document.createElement('strong'); title.textContent = meal.title;
     const macros = document.createElement('small');
     macros.textContent = `${meal.protein} g Protein · ${meal.carbs} g KH · ${meal.fat} g Fett`;
-    detail.append(title, document.createElement('br'), macros);
+    detail.append(title, document.createElement('br'));
+    if (meal.time) {
+      const time = document.createElement('small');
+      time.textContent = `${meal.time.slice(0, 5)} Uhr · `;
+      detail.append(time);
+    }
+    detail.append(macros);
     const actions = document.createElement('div');
     const kcal = document.createElement('strong'); kcal.textContent = `${meal.calories} kcal`;
     const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'delete'; remove.textContent = '×';
@@ -263,6 +277,32 @@ $('previousDay').addEventListener('click', () => moveDay(-1));
 $('nextDay').addEventListener('click', () => moveDay(1));
 $('todayButton').addEventListener('click', () => selectDate(localDate()));
 $('reloadDay').addEventListener('click', () => { message(); loadMeals(); });
+$('rangeStart').value = localDate();
+$('rangeEnd').value = localDate();
+$('calculateRange').addEventListener('click', async () => {
+  const start = $('rangeStart').value;
+  const end = $('rangeEnd').value;
+  $('rangeResult').hidden = true;
+  if (!validDate(start) || !validDate(end)) {
+    message('Bitte für den Zeitraum ein gültiges Start- und Enddatum wählen.', true);
+    return;
+  }
+  if (start > end) {
+    message('Das Startdatum muss vor oder am Enddatum liegen.', true);
+    return;
+  }
+  $('calculateRange').disabled = true;
+  try {
+    const rangeMeals = await store.range(start, end);
+    const calories = rangeMeals.reduce((sum, meal) => sum + meal.calories, 0);
+    const days = Math.round((new Date(`${end}T12:00:00`) - new Date(`${start}T12:00:00`)) / 86400000) + 1;
+    $('rangeCalories').textContent = Math.round(calories).toLocaleString('de-DE');
+    $('rangeDetails').textContent = `${new Intl.DateTimeFormat('de-DE').format(new Date(`${start}T12:00:00`))} bis ${new Intl.DateTimeFormat('de-DE').format(new Date(`${end}T12:00:00`))} · ${days} Tag${days === 1 ? '' : 'e'} · ${rangeMeals.length} Mahlzeit${rangeMeals.length === 1 ? '' : 'en'}`;
+    $('rangeResult').hidden = false;
+    message();
+  } catch (error) { message(error.message, true); }
+  finally { $('calculateRange').disabled = false; }
+});
 renderDashboard();
 initializeMeals();
 
@@ -305,7 +345,7 @@ async function exportCSV(all = false) {
     const data = await store.list(all ? undefined : selectedDate);
     const url = URL.createObjectURL(new Blob([toCSV(data)], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
-    link.href = url; link.download = `didi-${all ? 'alle-tage' : selectedDate}.csv`;
+    link.href = url; link.download = `didi-${all ? 'alle-tage' : selectedDate}_gesichert-${fileTimestamp()}.csv`;
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 60000);
     message('CSV-Download gestartet. Auf dem iPad in „Dateien“ sichern.');

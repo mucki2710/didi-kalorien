@@ -31,6 +31,12 @@ export const store = {
       request.onsuccess = () => done(request.result);
     });
   },
+  async range(start, end) {
+    return transaction('readonly', (table, done) => {
+      const request = table.index('date').getAll(IDBKeyRange.bound(start, end));
+      request.onsuccess = () => done(request.result);
+    });
+  },
   async add(input) {
     const meal = validateMeal(input);
     return transaction('readwrite', table => table.put(meal));

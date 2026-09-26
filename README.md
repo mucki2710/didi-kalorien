@@ -5,7 +5,10 @@ Persönliche, installierbare Web-App zur Erfassung von Mahlzeiten.
 Die App läuft vollständig im Browser:
 
 - Mahlzeiten und Kalender werden lokal auf dem Gerät gespeichert.
+- Ein frei wählbarer Zeitraum zeigt die Summe aller Kalorien an.
 - CSV-Dateien dienen zum Sichern, Übertragen und Wiederherstellen der Daten.
+- Neue CSV-Einträge enthalten Erfassungsdatum und Uhrzeit; der Dateiname enthält
+  ebenfalls Datum und Uhrzeit der Sicherung.
 - Die Fotoanalyse sendet das ausgewählte Foto direkt an die OpenAI Responses API.
 - Der eigene OpenAI-API-Schlüssel wird nur auf Wunsch im lokalen Website-Speicher abgelegt.
 - Ein Service Worker ermöglicht den Offline-Start nach dem ersten vollständigen Laden.
