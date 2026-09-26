@@ -30,13 +30,14 @@ Testen am jeweiligen Rechner geeignet.
 
 ## GitHub Pages
 
-Ein manueller Workflow liegt unter `.github/workflows/pages.yml` bereit.
-Es wurde noch nichts auf GitHub veröffentlicht.
+Der Workflow unter `.github/workflows/pages.yml` veröffentlicht `public/`
+automatisch bei Änderungen am Branch `main` und kann zusätzlich manuell gestartet werden.
 
 1. Projekt in ein GitHub-Repository übertragen. `.env`, `data/`, `.runtime/` und
    `node_modules/` dürfen nicht hochgeladen werden; `.gitignore` schließt sie aus.
 2. Im Repository **Settings → Pages → Source: GitHub Actions** wählen.
-3. Unter **Actions → Didi auf GitHub Pages → Run workflow** die Veröffentlichung starten.
+3. Den Stand auf `main` übertragen. Alternativ unter **Actions → Didi auf GitHub
+   Pages → Run workflow** die Veröffentlichung manuell starten.
 4. Die anschließend angezeigte HTTPS-Adresse auf dem iPad öffnen.
 
 Der Workflow veröffentlicht ausschließlich `public/`, niemals `.env` oder CSV-Daten.
@@ -60,7 +61,8 @@ bereitstellen; das ZIP allein ist kein iPad-Installationspaket.
 - „Tag als CSV“ exportiert den angezeigten Tag.
 - „Alle Tage als CSV sichern“ exportiert alle lokalen Mahlzeiten, ohne API-Schlüssel.
 - Auf dem iPad den Download in der Dateien-App sichern, z. B. in iCloud Drive.
-- „CSV importieren“ liest Didi-CSV-Dateien, auch die bisherige `data/meals.csv`.
+- „CSV importieren“ liest Didi-CSV-Dateien, einschließlich Sicherungen aus der
+  bisherigen Serverversion.
   Vorhandene IDs werden übersprungen. Ungültige Dateien werden nicht teilweise importiert.
 - CSV ist die Sicherung bzw. das Austauschformat. Die App kann keine Datei in der
   Dateien-App ohne erneute Dateiauswahl dauerhaft im Hintergrund überschreiben.
@@ -71,9 +73,9 @@ bereitstellen; das ZIP allein ist kein iPad-Installationspaket.
 
 ## Vorhandene Daten übernehmen
 
-Die bisherige Datei `data/meals.csv` bleibt auf dem Rechner unverändert erhalten.
-Diese Datei per Dateien/iCloud/AirDrop auf das iPad übertragen und **in der vom
-Home-Bildschirm gestarteten App** über „CSV importieren“ einlesen.
+Falls du eine frühere `meals.csv` separat gesichert hast, kannst du sie per
+Dateien/iCloud/AirDrop auf das iPad übertragen und **in der vom Home-Bildschirm
+gestarteten App** über „CSV importieren“ einlesen.
 
 Noch vorhandene alte LocalStorage-Daten unter `didi-meals` werden beim Start
 unter derselben Webadresse automatisch nach IndexedDB übernommen. Nach erfolgreicher
@@ -105,9 +107,7 @@ npm start
 
 `http://localhost:3000` zeigt ausschließlich statische Dateien; für die Web-App werden
 keine `/api`-Routen benötigt. `npm run dev` startet die Vorschau mit automatischem Neustart.
-Die alte API-Implementierung bleibt für bestehende Tests und Dateizugriff erhalten und
-kann bei Bedarf mit `npm run start:legacy` statt der Vorschau gestartet werden.
-Die neue Oberfläche verwendet auch dann ausschließlich lokalen Gerätespeicher.
+Die Oberfläche verwendet ausschließlich lokalen Gerätespeicher und benötigt kein Backend.
 
 ```bash
 npm test
