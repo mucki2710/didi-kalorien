@@ -65,10 +65,10 @@
           <span id="totalCalories">0</span>
           <small>kcal</small>
         </div>
-        <div class="goal">von 2.200 kcal</div>
+        <div class="goal">Ärztlich vereinbartes Ziel: <span id="dailyGoalDisplay">2.200</span> kcal</div>
       </div>
 
-      <strong id="remaining">2.200 übrig</strong>
+      <strong id="remaining">Noch 2.200 kcal bis zum Ziel</strong>
     </div>
 
     <div class="progress">
@@ -145,7 +145,15 @@
   </section>
   <details id="settings" class="card">
     <summary>Einstellungen &amp; Installation</summary>
+    <form id="goalForm">
+      <h3>Tagesziel</h3>
+      <p class="notice">Das gewünschte Kalorienziel nach Rücksprache mit Arzt oder Ernährungsfachkraft eintragen.</p>
+      <label for="dailyGoal">Ärztlich vereinbartes Tagesziel in kcal</label>
+      <input id="dailyGoal" type="number" min="500" max="10000" step="50" inputmode="numeric" required>
+      <button class="secondary" type="submit">Tagesziel speichern</button>
+    </form>
     <form id="settingsForm">
+      <h3>Fotoanalyse</h3>
       <p class="notice">Für die Fotoanalyse wird dein Foto direkt an OpenAI gesendet. Es gelten die Kosten deines API-Kontos.</p>
       <label for="apiKey">Dein OpenAI-API-Schlüssel</label>
       <input id="apiKey" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="API-Schlüssel einfügen" required>

@@ -6,6 +6,7 @@ Die App läuft vollständig im Browser:
 
 - Mahlzeiten und Kalender werden lokal auf dem Gerät gespeichert.
 - Ein frei wählbarer Zeitraum zeigt die Summe aller Kalorien an.
+- Das ärztlich vereinbarte Tagesziel lässt sich auf dem Gerät einstellen.
 - CSV-Dateien dienen zum Sichern, Übertragen und Wiederherstellen der Daten.
 - Neue CSV-Einträge enthalten Erfassungsdatum und Uhrzeit; der Dateiname enthält
   ebenfalls Datum und Uhrzeit der Sicherung.

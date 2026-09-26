@@ -1,7 +1,7 @@
 import { store } from './storage.js';
 import { toCSV, parseCSV, validDate } from './csv.js';
 import { analyzePhoto } from './openai.js';
-const DAILY_GOAL = 2200;
+const DEFAULT_DAILY_GOAL = 2200;
 const $ = id => document.getElementById(id);
 const fields = ['grams', 'kcal100', 'protein100', 'carbs100', 'fat100'];
 let currentFoods = [];
@@ -15,6 +15,7 @@ let saving = false;
 let draftId;
 let apiKey = '';
 let model = 'gpt-6-luna';
+let dailyGoal = DEFAULT_DAILY_GOAL;
 
 function message(text = '', isError = false) {
   $('message').textContent = text;
@@ -229,10 +230,13 @@ function renderDashboard() {
     return result;
   }, { calories: 0, protein: 0, carbs: 0, fat: 0 });
   $('totalCalories').textContent = sum.calories.toLocaleString('de-DE');
-  const remaining = DAILY_GOAL - sum.calories;
-  $('remaining').textContent = `${Math.abs(remaining).toLocaleString('de-DE')} ${remaining >= 0 ? 'übrig' : 'darüber'}`;
+  const remaining = dailyGoal - sum.calories;
+  $('dailyGoalDisplay').textContent = dailyGoal.toLocaleString('de-DE');
+  $('remaining').textContent = remaining > 0
+    ? `Noch ${Math.round(remaining).toLocaleString('de-DE')} kcal bis zum Ziel`
+    : `Ziel erreicht · ${Math.round(Math.abs(remaining)).toLocaleString('de-DE')} kcal zusätzlich`;
   for (const field of ['protein', 'carbs', 'fat']) $(field).textContent = `${Math.round(sum[field])} g`;
-  $('progressBar').style.width = `${Math.min(100, sum.calories / DAILY_GOAL * 100)}%`;
+  $('progressBar').style.width = `${Math.min(100, sum.calories / dailyGoal * 100)}%`;
   $('mealList').replaceChildren();
   if (!todayMeals.length) {
     const empty = document.createElement('div');
@@ -310,12 +314,29 @@ function loadSettings() {
   try {
     apiKey = localStorage.getItem('didi-api-key') || '';
     model = localStorage.getItem('didi-model') || 'gpt-6-luna';
+    const savedGoal = Number(localStorage.getItem('didi-daily-goal'));
+    if (Number.isInteger(savedGoal) && savedGoal >= 500 && savedGoal <= 10000) dailyGoal = savedGoal;
   } catch { /* Session-only use still works when localStorage is unavailable. */ }
+  $('dailyGoal').value = dailyGoal;
   $('apiKey').value = apiKey;
   $('model').value = model;
   $('rememberKey').checked = Boolean(apiKey);
   $('keyState').textContent = apiKey ? 'API-Schlüssel auf diesem Gerät gespeichert.' : 'Noch kein API-Schlüssel hinterlegt. Kalender und CSV funktionieren ohne Schlüssel.';
+  renderDashboard();
 }
+$('goalForm').addEventListener('submit', event => {
+  event.preventDefault();
+  const nextGoal = Number($('dailyGoal').value);
+  if (!Number.isInteger(nextGoal) || nextGoal < 500 || nextGoal > 10000) {
+    message('Bitte ein Tagesziel zwischen 500 und 10.000 kcal eintragen.', true);
+    return;
+  }
+  dailyGoal = nextGoal;
+  try { localStorage.setItem('didi-daily-goal', String(dailyGoal)); }
+  catch { message('Das Tagesziel konnte auf diesem Gerät nicht dauerhaft gespeichert werden.', true); renderDashboard(); return; }
+  renderDashboard();
+  message(`Tagesziel auf ${dailyGoal.toLocaleString('de-DE')} kcal gesetzt.`);
+});
 $('settingsForm').addEventListener('submit', event => {
   event.preventDefault();
   const nextKey = $('apiKey').value.trim();
