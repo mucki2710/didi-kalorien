@@ -11,6 +11,7 @@ Die App läuft vollständig im Browser:
 - Neue CSV-Einträge enthalten Erfassungsdatum und Uhrzeit; der Dateiname enthält
   ebenfalls Datum und Uhrzeit der Sicherung.
 - Die Fotoanalyse sendet das ausgewählte Foto direkt an die OpenAI Responses API.
+- Bei einer falschen Erkennung kann die Mahlzeit beschrieben und dasselbe Foto erneut analysiert werden.
 - Der eigene OpenAI-API-Schlüssel wird nur auf Wunsch im lokalen Website-Speicher abgelegt.
 - Ein Service Worker ermöglicht den Offline-Start nach dem ersten vollständigen Laden.
 

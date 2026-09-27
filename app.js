@@ -7,6 +7,7 @@ const fields = ['grams', 'kcal100', 'protein100', 'carbs100', 'fat100'];
 let currentFoods = [];
 let meals = [];
 let previewUrl;
+let currentPhoto;
 let requestController;
 let storageReadable = false;
 let selectedDate = localDate();
@@ -103,6 +104,8 @@ function discard() {
   requestController = undefined;
   currentFoods = [];
   draftId = undefined;
+  currentPhoto = undefined;
+  $('mealHint').value = '';
   clearPreview();
   $('analysisCard').style.display = 'none';
   $('photoInput').value = '';
@@ -124,19 +127,26 @@ async function handlePhoto(event) {
     return;
   }
   previewUrl = URL.createObjectURL(file);
+  currentPhoto = file;
   $('preview').src = previewUrl;
   $('preview').style.display = 'block';
   $('analysisCard').style.display = 'block';
-  $('status').style.display = 'block';
-  $('result').style.display = 'none';
   $('cameraButton').disabled = true;
   $('analysisCard').scrollIntoView({ behavior: 'smooth' });
+  await runPhotoAnalysis(file);
+}
+async function runPhotoAnalysis(file, mealHint = '', keepResult = false) {
+  $('status').textContent = mealHint ? '🔍 Mahlzeit wird mit deiner Beschreibung neu analysiert …' : '🔍 Mahlzeit wird analysiert …';
+  $('status').style.display = 'block';
+  if (!keepResult) $('result').style.display = 'none';
+  $('reanalyzeButton').disabled = true;
+  $('saveButton').disabled = true;
   const controller = new AbortController();
   requestController = controller;
   let timedOut = false;
   const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 75000);
   try {
-    const data = await analyzePhoto(file, apiKey, model, controller.signal);
+    const data = await analyzePhoto(file, apiKey, model, controller.signal, mealHint);
     if (requestController !== controller) return;
     currentFoods = data.foods;
     $('analysisNote').textContent = data.note || 'Bitte prüfe die geschätzten Mengen vor dem Speichern.';
@@ -154,9 +164,22 @@ async function handlePhoto(event) {
       requestController = undefined;
       $('status').style.display = 'none';
       $('cameraButton').disabled = false;
+      $('reanalyzeButton').disabled = false;
+      updateTotal();
     }
   }
 }
+$('reanalyzeButton').addEventListener('click', async () => {
+  const hint = $('mealHint').value.trim();
+  if (!currentPhoto || requestController) return;
+  if (!hint) {
+    message('Bitte beschreibe zuerst kurz, was auf dem Teller ist.', true);
+    $('mealHint').focus();
+    return;
+  }
+  message();
+  await runPhotoAnalysis(currentPhoto, hint, true);
+});
 function renderFoods() {
   $('foodList').replaceChildren();
   currentFoods.forEach((food, index) => {
