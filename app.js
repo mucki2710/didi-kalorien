@@ -16,7 +16,8 @@ let saving = false;
 let draftId;
 let manualMealLabel = '';
 let apiKey = '';
-let model = 'gpt-6-luna';
+const AVAILABLE_MODELS = ['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna'];
+let model = 'gpt-6-sol';
 let dailyGoal = DEFAULT_DAILY_GOAL;
 
 function message(text = '', isError = false) {
@@ -344,7 +345,13 @@ initializeMeals();
 function loadSettings() {
   try {
     apiKey = localStorage.getItem('didi-api-key') || '';
-    model = localStorage.getItem('didi-model') || 'gpt-6-luna';
+    const savedModel = localStorage.getItem('didi-model');
+    const modelSelectionVersion = localStorage.getItem('didi-model-selection-version');
+    model = modelSelectionVersion === '2' && AVAILABLE_MODELS.includes(savedModel) ? savedModel : 'gpt-6-sol';
+    if (modelSelectionVersion !== '2') {
+      localStorage.setItem('didi-model', model);
+      localStorage.setItem('didi-model-selection-version', '2');
+    }
     const savedGoal = Number(localStorage.getItem('didi-daily-goal'));
     if (Number.isInteger(savedGoal) && savedGoal >= 500 && savedGoal <= 10000) dailyGoal = savedGoal;
   } catch { /* Session-only use still works when localStorage is unavailable. */ }
@@ -371,8 +378,8 @@ $('goalForm').addEventListener('submit', event => {
 $('settingsForm').addEventListener('submit', event => {
   event.preventDefault();
   const nextKey = $('apiKey').value.trim();
-  const nextModel = $('model').value.trim();
-  if (!nextKey || !nextModel) return;
+  const nextModel = $('model').value;
+  if (!nextKey || !AVAILABLE_MODELS.includes(nextModel)) return;
   try {
     if ($('rememberKey').checked) localStorage.setItem('didi-api-key', nextKey);
     else localStorage.removeItem('didi-api-key');

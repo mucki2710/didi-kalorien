@@ -163,7 +163,12 @@
       <label for="apiKey">Dein OpenAI-API-Schlüssel</label>
       <input id="apiKey" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="API-Schlüssel einfügen" required>
       <label for="model">Modell</label>
-      <input id="model" type="text" value="gpt-6-luna" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+      <select id="model" required>
+        <option value="gpt-6-sol" selected>GPT-6 Sol – empfohlen</option>
+        <option value="gpt-6-astra">GPT-6 Astra – höchste Qualität</option>
+        <option value="gpt-6-luna">GPT-6 Luna – günstig</option>
+      </select>
+      <p class="notice">Sol ist die Vorgabe. Astra kann schwierige Bilder besser auswerten, kostet pro Analyse aber deutlich mehr.</p>
       <label class="checkbox"><input id="rememberKey" type="checkbox"> Schlüssel auf diesem Gerät merken</label>
       <p class="notice">Ohne Häkchen bleibt der Schlüssel nur bis zum Neuladen verfügbar. Mit Häkchen liegt er unverschlüsselt im Website-Speicher; verwende das nur auf deinem persönlichen Gerät.</p>
       <button class="secondary" type="submit">Einstellungen übernehmen</button>
