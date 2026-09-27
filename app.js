@@ -14,6 +14,7 @@ let selectedDate = localDate();
 let loadingVersion = 0;
 let saving = false;
 let draftId;
+let manualMealLabel = '';
 let apiKey = '';
 let model = 'gpt-6-luna';
 let dailyGoal = DEFAULT_DAILY_GOAL;
@@ -104,6 +105,7 @@ function discard() {
   requestController = undefined;
   currentFoods = [];
   draftId = undefined;
+  manualMealLabel = '';
   currentPhoto = undefined;
   $('mealHint').value = '';
   clearPreview();
@@ -148,8 +150,14 @@ async function runPhotoAnalysis(file, mealHint = '', keepResult = false) {
   try {
     const data = await analyzePhoto(file, apiKey, model, controller.signal, mealHint);
     if (requestController !== controller) return;
+    if (mealHint && data.foods.length) {
+      manualMealLabel = mealHint.trim().slice(0, 500);
+      data.foods[0] = { ...data.foods[0], name: manualMealLabel };
+    }
     currentFoods = data.foods;
-    $('analysisNote').textContent = data.note || 'Bitte prüfe die geschätzten Mengen vor dem Speichern.';
+    $('analysisNote').textContent = manualMealLabel
+      ? `Eigene Kennzeichnung übernommen: ${manualMealLabel}. ${data.note || 'Bitte prüfe die geschätzten Mengen.'}`
+      : data.note || 'Bitte prüfe die geschätzten Mengen vor dem Speichern.';
     $('result').style.display = 'block';
     renderFoods();
     if (!currentFoods.length) message('Kein Essen erkannt. Bitte fotografiere die Mahlzeit noch einmal deutlicher.');
@@ -221,7 +229,7 @@ async function saveMeal() {
   draftId ||= typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   const meal = {
     id: draftId, date: selectedDate, time: localTime(),
-    title: currentFoods.filter(food => food.grams > 0).slice(0, 2).map(food => food.name).join(' + '),
+    title: manualMealLabel || currentFoods.filter(food => food.grams > 0).slice(0, 2).map(food => food.name).join(' + '),
     foods: currentFoods.map(food => ({ ...food })),
     ...Object.fromEntries(Object.entries(values).map(([key, value]) => [key, Math.round(value)])),
   };
