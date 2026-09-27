@@ -27,7 +27,7 @@ export async function analyzePhoto(file, key, model, signal, mealHint = '') {
   });
   const hint = String(mealHint).trim().slice(0, 500);
   const question = hint
-    ? `Welche Lebensmittel und Mengen sind auf diesem Foto zu sehen? Die Person beschreibt die Mahlzeit so: „${hint}“. Nutze diese Angabe als Kontext, gleiche sie aber mit dem sichtbaren Foto ab.`
+    ? `Analysiere die Mahlzeit erneut. Verbindliche Kennzeichnung der Person: „${hint}“. Übernimm diese Kennzeichnung für die Identität der genannten Lebensmittel, auch wenn das Foto anders zu wirken scheint. Verwende das Foto nur zum Schätzen von Menge, Zubereitungszustand und zusätzlich sichtbaren, nicht widersprechenden Bestandteilen. Benenne ein gekennzeichnetes Lebensmittel nicht in ein anderes um.`
     : 'Welche Lebensmittel und Mengen sind auf diesem Foto zu sehen?';
   const response = await fetch('https://api.openai.com/v1/responses', {
     method: 'POST', signal, credentials: 'omit', redirect: 'error',
