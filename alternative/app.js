@@ -146,7 +146,8 @@ function applyAnalysis(data, enforcedLabel = '') {
   currentFoods = data.foods;
   $('analysisNote').textContent = manualMealLabel
     ? `Eigene Kennzeichnung übernommen: ${manualMealLabel}. ${data.note || 'Bitte prüfe die geschätzten Mengen.'}`
-    : data.note || 'Bitte prüfe die geschätzten Mengen vor dem Speichern.';
+      : data.note || 'Bitte prüfe die geschätzten Mengen vor dem Speichern.';
+  $('correctionPanel').hidden = !currentPhoto;
   $('result').style.display = 'block';
   renderFoods();
   if (!currentFoods.length) message('Keine ausreichenden Angaben erkannt. Bitte Foto oder Beschreibung ergänzen.');
