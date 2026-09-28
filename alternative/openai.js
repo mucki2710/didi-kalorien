@@ -62,17 +62,19 @@ async function requestAnalysis(content, key, model, signal) {
   }
   return data;
 }
-export async function analyzePhoto(file, key, model, signal, mealHint = '', portion = '', forceLabel = false) {
-  const image = await readImage(file);
+export async function analyzePhoto(files, key, model, signal, mealHint = '', portion = '', forceLabel = false) {
+  const photoFiles = (Array.isArray(files) ? files : [files]).filter(Boolean).slice(0, 2);
+  if (!photoFiles.length) throw new Error('Bitte mindestens ein Foto auswählen.');
+  const images = await Promise.all(photoFiles.map(readImage));
   const hint = String(mealHint).trim().slice(0, 500);
   const portionText = portionInstruction(portion);
   let question = 'Welche Lebensmittel und Mengen sind auf diesem Foto zu sehen?';
   if (hint && forceLabel) question = `Analysiere die Mahlzeit erneut. Verbindliche Kennzeichnung der Person: „${hint}“. Übernimm diese Kennzeichnung für die Identität der genannten Lebensmittel, auch wenn das Foto anders zu wirken scheint. Verwende das Foto nur zum Schätzen von Menge, Zubereitungszustand und zusätzlich sichtbaren, nicht widersprechenden Bestandteilen. Benenne ein gekennzeichnetes Lebensmittel nicht in ein anderes um.`;
-  else if (hint) question += ` Zusätzliche Beschreibung der Person: „${hint}“. Nutze Foto und Beschreibung gemeinsam.`;
+  else if (hint) question = `Verbindliche Beschreibung der Person: „${hint}“. Übernimm daraus Identität und Anzahl der genannten Lebensmittel. Nutze ${images.length > 1 ? 'die Fotos' : 'das Foto'} ergänzend für Mengen, Zubereitungszustand und weitere sichtbare Bestandteile, die der Beschreibung nicht widersprechen. Ersetze ein beschriebenes Lebensmittel nicht aufgrund des Bildes durch ein anderes.`;
   if (portionText) question += ` ${portionText} Berücksichtige diese Angabe bei der Mengenschätzung.`;
   return requestAnalysis([
     { type: 'input_text', text: question },
-    { type: 'input_image', image_url: image, detail: 'auto' },
+    ...images.map(image => ({ type: 'input_image', image_url: image, detail: 'auto' })),
   ], key, model, signal);
 }
 export async function analyzeText(description, key, model, signal, portion = '') {

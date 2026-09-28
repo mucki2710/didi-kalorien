@@ -14,6 +14,9 @@ Die App läuft vollständig im Browser:
 - Mahlzeiten können wahlweise per Foto, Text oder mit beiden Angaben nacheinander analysiert werden.
 - Kleine, mittlere oder große Portionen können optional vorgegeben werden.
 - Die Mahlzeitenbeschreibung kann über Speech-to-Text diktiert werden, sofern der Browser dies unterstützt.
+- Spracheingaben können per Taste oder mit den Befehlen „Eingabe löschen“, „Text löschen“ und „alles löschen“ entfernt werden.
+- Bei Foto plus Beschreibung ist der Text verbindlich; bis zu zwei Fotos ergänzen die Mengenschätzung.
+- Erkannte Lebensmittelnamen und Grammangaben können direkt korrigiert werden.
 - GPT-6 Sol ist als empfohlenes Analysemodell voreingestellt; Astra und Luna sind auswählbar.
 - Bei einer falschen Erkennung kann die Mahlzeit beschrieben und dasselbe Foto erneut analysiert werden.
 - Der eigene OpenAI-API-Schlüssel wird nur auf Wunsch im lokalen Website-Speicher abgelegt.

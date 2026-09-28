@@ -104,8 +104,16 @@
 
 
   <section class="card" aria-labelledby="analysisStartTitle">
-    <h2 id="analysisStartTitle">Mahlzeit analysieren</h2>
-    <p class="notice">Foto und Beschreibung können einzeln oder nacheinander verwendet werden.</p>
+    <h2 id="analysisStartTitle">Mahlzeit sprechen</h2>
+    <p class="notice">Beschreibe Lebensmittel und bekannte Mengen. Die Beschreibung hat bei einer kombinierten Analyse Vorrang vor dem Foto.</p>
+    <button id="speechButton" class="speech-button" type="button">🎙️ Aufnahme starten</button>
+    <p id="speechState" class="notice" role="status">Sprachbefehl zum Löschen: „Eingabe löschen“.</p>
+    <label for="mealSearchText">Erkannter oder eingegebener Text</label>
+    <textarea id="mealSearchText" rows="4" maxlength="500" placeholder="Zum Beispiel: Zwei Eier mit einer Scheibe Vollkornbrot"></textarea>
+    <div class="speech-actions">
+      <button id="clearSpeechButton" class="secondary danger-secondary" type="button">Text löschen</button>
+      <button id="textAnalysisButton" class="analysis-choice" type="button">Beschreibung analysieren</button>
+    </div>
     <label for="portionSize">Portionsgröße (optional)</label>
     <select id="portionSize">
       <option value="">Nicht angegeben</option>
@@ -113,13 +121,9 @@
       <option value="medium">Mittlere Portion</option>
       <option value="large">Große Portion</option>
     </select>
-    <label for="mealSearchText">Mahlzeit beschreiben (optional)</label>
-    <textarea id="mealSearchText" rows="3" maxlength="500" placeholder="Zum Beispiel: Zwei Eier mit einer Scheibe Vollkornbrot"></textarea>
-    <div class="analysis-actions">
-      <button id="speechButton" class="secondary" type="button">🎙️ Text sprechen</button>
-      <button id="textAnalysisButton" class="analysis-choice" type="button">Text analysieren</button>
-    </div>
-    <p id="speechState" class="notice" role="status"></p>
+    <p class="notice">Optional danach ein Foto ergänzen. Ein zweites Foto kann die Mengenschätzung verbessern.</p>
+    <button id="secondPhotoButton" class="secondary" type="button" disabled>📷 Zweites Foto ergänzen</button>
+    <input id="secondPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
   </section>
 
 
@@ -128,6 +132,7 @@
     <h2>Fotoanalyse</h2>
 
     <img id="preview" class="preview" alt="Mahlzeit">
+    <img id="previewSecond" class="preview" alt="Mahlzeit aus zweiter Perspektive">
 
     <div class="status" id="status" role="status" aria-live="polite">
       🔍 Mahlzeit wird analysiert …
@@ -136,7 +141,7 @@
     <div id="result">
       <p>
         Erkannte Lebensmittel und geschätzte Mengen.
-        Du kannst die Grammangaben korrigieren.
+        Du kannst Namen und Grammangaben direkt korrigieren.
       </p>
 
       <p id="analysisNote" class="notice"></p>

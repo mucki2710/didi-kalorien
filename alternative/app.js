@@ -7,7 +7,9 @@ const fields = ['grams', 'kcal100', 'protein100', 'carbs100', 'fat100'];
 let currentFoods = [];
 let meals = [];
 let previewUrl;
+let secondPreviewUrl;
 let currentPhoto;
+let secondPhoto;
 let requestController;
 let storageReadable = false;
 let selectedDate = localDate();
@@ -97,9 +99,13 @@ function totals(foods) {
 }
 function clearPreview() {
   if (previewUrl) URL.revokeObjectURL(previewUrl);
+  if (secondPreviewUrl) URL.revokeObjectURL(secondPreviewUrl);
   previewUrl = undefined;
+  secondPreviewUrl = undefined;
   $('preview').removeAttribute('src');
   $('preview').style.display = 'none';
+  $('previewSecond').removeAttribute('src');
+  $('previewSecond').style.display = 'none';
 }
 function discard() {
   requestController?.abort();
@@ -108,10 +114,13 @@ function discard() {
   draftId = undefined;
   manualMealLabel = '';
   currentPhoto = undefined;
+  secondPhoto = undefined;
   $('mealHint').value = '';
   clearPreview();
   $('analysisCard').style.display = 'none';
   $('photoInput').value = '';
+  $('secondPhotoInput').value = '';
+  $('secondPhotoButton').disabled = true;
   $('cameraButton').disabled = false;
   $('saveButton').disabled = true;
 }
@@ -134,10 +143,32 @@ async function handlePhoto(event) {
   $('preview').src = previewUrl;
   $('preview').style.display = 'block';
   $('analysisCard').style.display = 'block';
+  $('secondPhotoButton').disabled = false;
   $('cameraButton').disabled = true;
   $('analysisCard').scrollIntoView({ behavior: 'smooth' });
-  await runPhotoAnalysis(file, $('mealSearchText').value.trim());
+  await runPhotoAnalysis([file], $('mealSearchText').value.trim());
 }
+function validPhoto(file) {
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    message('Bitte ein JPEG-, PNG- oder WebP-Foto auswählen.', true); return false;
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    message('Jedes Foto darf höchstens 10 MB groß sein.', true); return false;
+  }
+  return true;
+}
+$('secondPhotoButton').addEventListener('click', () => $('secondPhotoInput').click());
+$('secondPhotoInput').addEventListener('change', async event => {
+  const file = event.target.files[0];
+  if (!file || !currentPhoto || !validPhoto(file)) return;
+  secondPhoto = file;
+  if (secondPreviewUrl) URL.revokeObjectURL(secondPreviewUrl);
+  secondPreviewUrl = URL.createObjectURL(file);
+  $('previewSecond').src = secondPreviewUrl;
+  $('previewSecond').style.display = 'block';
+  message();
+  await runPhotoAnalysis([currentPhoto, secondPhoto], $('mealSearchText').value.trim(), true);
+});
 function applyAnalysis(data, enforcedLabel = '') {
   if (enforcedLabel && data.foods.length) {
     manualMealLabel = enforcedLabel.trim().slice(0, 500);
@@ -152,7 +183,7 @@ function applyAnalysis(data, enforcedLabel = '') {
   renderFoods();
   if (!currentFoods.length) message('Keine ausreichenden Angaben erkannt. Bitte Foto oder Beschreibung ergänzen.');
 }
-async function runPhotoAnalysis(file, mealHint = '', keepResult = false, enforceLabel = false) {
+async function runPhotoAnalysis(files, mealHint = '', keepResult = false, enforceLabel = false) {
   $('status').textContent = mealHint ? '🔍 Mahlzeit wird mit deiner Beschreibung neu analysiert …' : '🔍 Mahlzeit wird analysiert …';
   $('status').style.display = 'block';
   if (!keepResult) $('result').style.display = 'none';
@@ -163,7 +194,7 @@ async function runPhotoAnalysis(file, mealHint = '', keepResult = false, enforce
   let timedOut = false;
   const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 75000);
   try {
-    const data = await analyzePhoto(file, apiKey, model, controller.signal, mealHint, $('portionSize').value, enforceLabel);
+    const data = await analyzePhoto(files, apiKey, model, controller.signal, mealHint, $('portionSize').value, enforceLabel);
     if (requestController !== controller) return;
     applyAnalysis(data, enforceLabel ? mealHint : '');
   } catch (error) {
@@ -191,7 +222,7 @@ $('reanalyzeButton').addEventListener('click', async () => {
     return;
   }
   message();
-  await runPhotoAnalysis(currentPhoto, hint, true, true);
+  await runPhotoAnalysis([currentPhoto, secondPhoto].filter(Boolean), hint, true, true);
 });
 $('textAnalysisButton').addEventListener('click', async () => {
   const description = $('mealSearchText').value.trim();
@@ -203,7 +234,7 @@ $('textAnalysisButton').addEventListener('click', async () => {
   if (!apiKey) { $('settings').open = true; message('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
   message();
   if (currentPhoto) {
-    await runPhotoAnalysis(currentPhoto, description, true);
+    await runPhotoAnalysis([currentPhoto, secondPhoto].filter(Boolean), description, true);
     return;
   }
   $('analysisCard').style.display = 'block';
@@ -240,20 +271,36 @@ $('textAnalysisButton').addEventListener('click', async () => {
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let speechRecognition;
+function clearSpeechText(fromVoice = false) {
+  $('mealSearchText').value = '';
+  $('speechState').textContent = fromVoice
+    ? 'Sprachbefehl erkannt: Die Eingabe wurde gelöscht.'
+    : 'Die Spracheingabe wurde gelöscht.';
+  message();
+}
+$('clearSpeechButton').addEventListener('click', () => clearSpeechText());
 if (SpeechRecognition) {
   speechRecognition = new SpeechRecognition();
   speechRecognition.lang = 'de-DE';
   speechRecognition.interimResults = false;
+  speechRecognition.continuous = true;
   speechRecognition.maxAlternatives = 1;
   speechRecognition.onstart = () => {
     $('speechButton').classList.add('listening');
     $('speechButton').textContent = '⏹️ Aufnahme stoppen';
-    $('speechState').textContent = 'Bitte die Mahlzeit jetzt beschreiben …';
+    $('speechState').textContent = 'Aufnahme läuft. Zum Beenden erneut drücken.';
   };
   speechRecognition.onresult = event => {
-    const spoken = event.results[event.results.length - 1][0].transcript.trim();
-    $('mealSearchText').value = [$('mealSearchText').value.trim(), spoken].filter(Boolean).join(' ');
-    $('speechState').textContent = 'Gesprochener Text wurde übernommen und kann korrigiert werden.';
+    for (let index = event.resultIndex ?? 0; index < event.results.length; index++) {
+      if (event.results[index].isFinal === false) continue;
+      const spoken = event.results[index][0].transcript.trim();
+      const command = spoken.toLocaleLowerCase('de-DE').replace(/[.!?]/g, '').trim();
+      if (/^(eingabe|text|alles) löschen$/.test(command)) clearSpeechText(true);
+      else {
+        $('mealSearchText').value = [$('mealSearchText').value.trim(), spoken].filter(Boolean).join(' ');
+        $('speechState').textContent = 'Gesprochener Text wurde übernommen. Aufnahme läuft weiter.';
+      }
+    }
   };
   speechRecognition.onerror = event => {
     $('speechState').textContent = event.error === 'not-allowed'
@@ -262,7 +309,7 @@ if (SpeechRecognition) {
   };
   speechRecognition.onend = () => {
     $('speechButton').classList.remove('listening');
-    $('speechButton').textContent = '🎙️ Text sprechen';
+    $('speechButton').textContent = '🎙️ Aufnahme starten';
   };
   $('speechButton').addEventListener('click', () => {
     if ($('speechButton').classList.contains('listening')) speechRecognition.stop();
@@ -277,8 +324,15 @@ function renderFoods() {
   currentFoods.forEach((food, index) => {
     const row = document.createElement('div');
     row.className = 'food-row';
-    const name = document.createElement('div');
-    name.textContent = food.name;
+    const name = document.createElement('input');
+    name.type = 'text'; name.maxLength = 120; name.required = true;
+    name.className = 'food-name'; name.value = food.name;
+    name.setAttribute('aria-label', `Lebensmittel ${index + 1}`);
+    name.addEventListener('input', () => {
+      currentFoods[index].name = name.value.trim();
+      manualMealLabel = '';
+      updateTotal();
+    });
     const label = document.createElement('label');
     label.textContent = 'Gramm';
     const input = document.createElement('input');
