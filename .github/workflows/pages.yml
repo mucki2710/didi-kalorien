@@ -19,6 +19,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/configure-pages@v5
+      - name: Alternative App bereitstellen
+        run: mkdir -p public/alternative && cp -R alternative/. public/alternative/
       - uses: actions/upload-pages-artifact@v4
         with:
           path: public
