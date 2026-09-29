@@ -1,4 +1,4 @@
-const CACHE = 'didi-alternative-v5';
+const CACHE = 'didi-alternative-v8';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './csv.js', './storage.js', './openai.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
@@ -15,5 +15,13 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET' || url.origin !== self.location.origin) return;
   const allowed = ASSETS.map(path => new URL(path, self.registration.scope).href);
   if (!allowed.includes(url.href)) return;
-  event.respondWith(caches.open(CACHE).then(async cache => (await cache.match(event.request)) || fetch(event.request)));
+  event.respondWith(caches.open(CACHE).then(async cache => {
+    try {
+      const response = await fetch(event.request);
+      if (response.ok) await cache.put(event.request, response.clone());
+      return response;
+    } catch {
+      return cache.match(event.request);
+    }
+  }));
 });

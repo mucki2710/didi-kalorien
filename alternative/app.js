@@ -116,6 +116,8 @@ function discard() {
   currentPhoto = undefined;
   secondPhoto = undefined;
   $('mealHint').value = '';
+  $('mealSearchText').value = '';
+  $('photoDescription').value = '';
   clearPreview();
   $('analysisCard').style.display = 'none';
   $('photoInput').value = '';
@@ -127,9 +129,10 @@ function discard() {
 async function handlePhoto(event) {
   const file = event.target.files[0];
   if (!file) return;
+  const description = $('photoDescription').value.trim();
   discard();
   message();
-  if (!apiKey) { $('settings').open = true; message('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
+  if (!apiKey) { document.querySelector('[data-tab="settings"]').click(); message('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     message('Bitte ein JPEG-, PNG- oder WebP-Foto auswählen. HEIC-Fotos vorher als JPEG exportieren.', true);
     return;
@@ -146,7 +149,8 @@ async function handlePhoto(event) {
   $('secondPhotoButton').disabled = false;
   $('cameraButton').disabled = true;
   $('analysisCard').scrollIntoView({ behavior: 'smooth' });
-  await runPhotoAnalysis([file], $('mealSearchText').value.trim());
+  $('photoDescription').value = '';
+  await runPhotoAnalysis([file], description);
 }
 function validPhoto(file) {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -167,7 +171,7 @@ $('secondPhotoInput').addEventListener('change', async event => {
   $('previewSecond').src = secondPreviewUrl;
   $('previewSecond').style.display = 'block';
   message();
-  await runPhotoAnalysis([currentPhoto, secondPhoto], $('mealSearchText').value.trim(), true);
+  await runPhotoAnalysis([currentPhoto, secondPhoto], $('photoDescription').value.trim(), true);
 });
 function applyAnalysis(data, enforcedLabel = '') {
   if (enforcedLabel && data.foods.length) {
@@ -231,8 +235,9 @@ $('textAnalysisButton').addEventListener('click', async () => {
     $('mealSearchText').focus();
     return;
   }
-  if (!apiKey) { $('settings').open = true; message('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
+  if (!apiKey) { document.querySelector('[data-tab="settings"]').click(); message('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
   message();
+  $('mealSearchText').value = '';
   if (currentPhoto) {
     await runPhotoAnalysis([currentPhoto, secondPhoto].filter(Boolean), description, true);
     return;
@@ -271,6 +276,7 @@ $('textAnalysisButton').addEventListener('click', async () => {
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let speechRecognition;
+let speechTimer;
 function clearSpeechText(fromVoice = false) {
   $('mealSearchText').value = '';
   $('speechState').textContent = fromVoice
@@ -283,12 +289,14 @@ if (SpeechRecognition) {
   speechRecognition = new SpeechRecognition();
   speechRecognition.lang = 'de-DE';
   speechRecognition.interimResults = false;
-  speechRecognition.continuous = true;
+  speechRecognition.continuous = false;
   speechRecognition.maxAlternatives = 1;
   speechRecognition.onstart = () => {
     $('speechButton').classList.add('listening');
     $('speechButton').textContent = '⏹️ Aufnahme stoppen';
     $('speechState').textContent = 'Aufnahme läuft. Zum Beenden erneut drücken.';
+    clearTimeout(speechTimer);
+    speechTimer = setTimeout(() => speechRecognition.stop(), 30000);
   };
   speechRecognition.onresult = event => {
     for (let index = event.resultIndex ?? 0; index < event.results.length; index++) {
@@ -298,22 +306,27 @@ if (SpeechRecognition) {
       if (/^(eingabe|text|alles) löschen$/.test(command)) clearSpeechText(true);
       else {
         $('mealSearchText').value = [$('mealSearchText').value.trim(), spoken].filter(Boolean).join(' ');
-        $('speechState').textContent = 'Gesprochener Text wurde übernommen. Aufnahme läuft weiter.';
+        $('speechState').textContent = 'Gesprochener Text wurde übernommen. Aufnahme beendet.';
       }
     }
   };
   speechRecognition.onerror = event => {
+    clearTimeout(speechTimer);
     $('speechState').textContent = event.error === 'not-allowed'
       ? 'Mikrofonzugriff wurde nicht erlaubt. Bitte in den Browser-Einstellungen freigeben.'
       : 'Spracheingabe war nicht möglich. Bitte erneut versuchen oder Text eingeben.';
   };
   speechRecognition.onend = () => {
+    clearTimeout(speechTimer);
     $('speechButton').classList.remove('listening');
     $('speechButton').textContent = '🎙️ Aufnahme starten';
   };
   $('speechButton').addEventListener('click', () => {
     if ($('speechButton').classList.contains('listening')) speechRecognition.stop();
-    else { try { speechRecognition.start(); } catch { /* Already starting. */ } }
+    else {
+      try { speechRecognition.start(); }
+      catch { $('speechState').textContent = 'Aufnahme konnte nicht gestartet werden. Bitte erneut versuchen oder die Mikrofontaste der Tastatur verwenden.'; }
+    }
   });
 } else {
   $('speechButton').disabled = true;
@@ -427,7 +440,7 @@ function renderDashboard() {
     detail.append(macros);
     const actions = document.createElement('div');
     const kcal = document.createElement('strong'); kcal.textContent = `${meal.calories} kcal`;
-    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'delete'; remove.textContent = '×';
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'delete'; remove.textContent = '🗑️';
     remove.setAttribute('aria-label', `${meal.title} löschen`);
     remove.addEventListener('click', async () => {
       remove.disabled = true;
@@ -452,6 +465,22 @@ $('todayButton').addEventListener('click', () => selectDate(localDate()));
 $('reloadDay').addEventListener('click', () => { message(); loadMeals(); });
 $('rangeStart').value = localDate();
 $('rangeEnd').value = localDate();
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const selectedTab = tab.dataset.tab;
+    document.querySelectorAll('.tab').forEach(button => {
+      const active = button === tab;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-selected', String(active));
+    });
+    document.querySelectorAll('.panel').forEach(panel => {
+      panel.hidden = !panel.dataset.panel.split(' ').includes(selectedTab);
+    });
+  });
+});
+document.querySelector('.tab.is-active')?.click();
+
 $('calculateRange').addEventListener('click', async () => {
   const start = $('rangeStart').value;
   const end = $('rangeEnd').value;
@@ -491,6 +520,8 @@ function loadSettings() {
     }
     const savedGoal = Number(localStorage.getItem('didi-daily-goal'));
     if (Number.isInteger(savedGoal) && savedGoal >= 500 && savedGoal <= 10000) dailyGoal = savedGoal;
+    const savedPortion = localStorage.getItem('didi-portion-size');
+    if (['', 'small', 'medium', 'large'].includes(savedPortion)) $('portionSize').value = savedPortion;
   } catch { /* Session-only use still works when localStorage is unavailable. */ }
   $('dailyGoal').value = dailyGoal;
   $('apiKey').value = apiKey;
@@ -521,6 +552,7 @@ $('settingsForm').addEventListener('submit', event => {
     if ($('rememberKey').checked) localStorage.setItem('didi-api-key', nextKey);
     else localStorage.removeItem('didi-api-key');
     localStorage.setItem('didi-model', nextModel);
+    localStorage.setItem('didi-portion-size', $('portionSize').value);
   } catch {
     message('Einstellungen konnten nicht dauerhaft gespeichert werden. Der Schlüssel wird nur für diese Sitzung verwendet.', true);
     apiKey = nextKey; model = nextModel;
@@ -567,7 +599,7 @@ $('csvInput').addEventListener('change', async event => {
 });
 loadSettings();
 function connectionStatus() {
-  $('connection').textContent = navigator.onLine ? 'Lokal gespeichert · Fotoanalyse benötigt Internet' : 'Offline · Kalender und Mahlzeiten verfügbar';
+  $('connection').textContent = navigator.onLine ? 'Lokal gespeichert · Sprach- und Fotoanalyse benötigt Internet' : 'Offline · Kalender und Mahlzeiten verfügbar';
 }
 window.addEventListener('online', connectionStatus);
 window.addEventListener('offline', connectionStatus);

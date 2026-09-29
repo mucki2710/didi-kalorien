@@ -25,6 +25,51 @@
       margin: 0 auto;
       min-height: 100vh;
       padding: 20px 16px 110px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header { order: 1; }
+    #message { order: 2; }
+    .tabs { order: 3; }
+    .dashboard-card { order: 4; }
+    .input-card { order: 5; }
+    .analysis { order: 6; }
+    .meals-card { order: 7; }
+    .photo-panel { order: 8; }
+    .day-panel { order: 10; }
+    .range-panel { order: 11; }
+    .data-panel { order: 12; }
+    .settings-panel { order: 13; }
+    .footer-notice { order: 14; }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 5px;
+      margin-bottom: 16px;
+      padding: 4px;
+      background: #e8efe9;
+      border-radius: 14px;
+    }
+
+    .tab {
+      min-height: 44px;
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 4px;
+      background: transparent;
+      color: var(--muted);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .tab.is-active {
+      background: white;
+      color: var(--text);
+      box-shadow: 0 2px 8px rgba(20, 30, 50, 0.08);
     }
 
     h1, h2, h3, p {
@@ -58,6 +103,24 @@
       justify-content: space-between;
       align-items: end;
       margin-bottom: 12px;
+    }
+
+    .dashboard-card {
+      padding: 12px 14px;
+      margin-bottom: 12px;
+    }
+
+    .dashboard-card .calorie-number {
+      font-size: 24px;
+    }
+
+    .dashboard-card .macro-grid {
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .dashboard-card .macro {
+      padding: 7px 5px;
     }
 
     .calorie-number {
@@ -194,9 +257,10 @@
 
     textarea { box-sizing: border-box; }
     #mealSearchText { width: 100%; margin-top: 6px; resize: vertical; border: 1px solid var(--border); border-radius: 10px; padding: 9px; font: inherit; }
-    .speech-actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
-    .analysis-choice { margin-top: 10px; border: 0; border-radius: 12px; padding: 11px 14px; background: #168456; color: white; font: inherit; font-weight: 750; cursor: pointer; }
-    .speech-button { width: 100%; min-height: 58px; margin: 8px 0; border: 0; border-radius: 16px; padding: 14px; background: #168456; color: white; font: inherit; font-size: 18px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 18px rgb(22 132 86 / 28%); }
+    .primary-actions { display: grid; grid-template-columns: 1fr 1.15fr; gap: 10px; align-items: stretch; }
+    .speech-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
+    .analysis-choice { min-height: 42px; margin-top: 8px; border: 0; border-radius: 12px; padding: 9px 8px; background: #168456; color: white; font: inherit; font-size: 15px; font-weight: 750; cursor: pointer; }
+    .speech-button { width: 100%; min-height: 42px; margin: 8px 0; border: 0; border-radius: 12px; padding: 9px 8px; background: #168456; color: white; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgb(22 132 86 / 24%); }
     .speech-button.listening { background: #b42318; box-shadow: 0 6px 18px rgb(180 35 24 / 25%); }
     .danger-secondary { color: #982b2b; border-color: #d9a0a0; }
     .food-name { min-width: 0; font-weight: 650; }
@@ -241,11 +305,17 @@
     }
 
     .delete {
-      border: 0;
-      background: transparent;
+      min-width: 48px;
+      min-height: 48px;
+      border: 1px solid #efcaca;
+      border-radius: 12px;
+      background: #fff7f7;
       color: var(--danger);
+      font-size: 20px;
       cursor: pointer;
-      margin-left: 8px;
+      margin-left: 6px;
+      padding: 8px;
+      touch-action: manipulation;
     }
   
     button:disabled { opacity: .55; cursor: wait; }
@@ -277,8 +347,16 @@
 .range-result strong { display: block; margin: 4px 0; font-size: 26px; }
 .range-result small { line-height: 1.4; }
 @media (max-width: 360px) { .range-grid { grid-template-columns: 1fr; } }
-@media (max-width: 420px) { .speech-actions { grid-template-columns: 1fr; gap: 0; } }
 
+.photo-action {
+      position: static;
+      transform: none;
+      width: 100%;
+      margin: 12px 0 4px;
+      border-radius: 12px;
+      padding: 11px;
+      font-size: 15px;
+    }
 summary { cursor: pointer; font-weight: 700; }
 #settings label { display: block; margin-top: 14px; margin-bottom: 6px; }
 #settings .checkbox { display: flex; gap: 10px; align-items: center; }

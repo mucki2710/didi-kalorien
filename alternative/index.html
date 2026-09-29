@@ -21,12 +21,21 @@
   <header class="header">
     <h1>🥗 Didi <small>Alternative</small></h1>
     <div class="date" id="date"></div>
-    <p class="notice" id="connection">Lokal auf diesem Gerät</p>
+    <p class="notice" id="connection">Sprach- und Fotoanalyse benötigt Internet</p>
   </header>
 
   <div id="message" class="message" role="status" hidden></div>
 
-  <section class="card" aria-label="Kalender">
+  <nav class="tabs" aria-label="Bereiche">
+    <button class="tab is-active" type="button" data-tab="main" aria-selected="true">Erfassen</button>
+    <button class="tab" type="button" data-tab="photo" aria-selected="false">Fotoanalyse</button>
+    <button class="tab" type="button" data-tab="day" aria-selected="false">Tag</button>
+    <button class="tab" type="button" data-tab="range" aria-selected="false">Auswertung</button>
+    <button class="tab" type="button" data-tab="data" aria-selected="false">Daten</button>
+    <button class="tab" type="button" data-tab="settings" aria-selected="false">Einstellungen</button>
+  </nav>
+
+  <section class="card panel day-panel" data-panel="day" aria-label="Kalender">
     <label for="dayPicker">Tag auswählen</label>
     <div class="calendar-row">
       <button id="previousDay" class="secondary" type="button" aria-label="Vorheriger Tag">‹</button>
@@ -40,7 +49,7 @@
     </div>
   </section>
 
-  <section class="card" aria-labelledby="rangeTitle">
+  <section class="card panel range-panel" data-panel="range" aria-labelledby="rangeTitle">
     <h2 id="rangeTitle">Zeitraum auswerten</h2>
     <div class="range-grid">
       <label for="rangeStart">Von
@@ -58,7 +67,7 @@
     </div>
   </section>
 
-  <section class="card">
+  <section class="card panel dashboard-card" data-panel="main">
     <div class="calorie-row">
       <div>
         <div class="calorie-number">
@@ -94,40 +103,32 @@
   </section>
 
 
-  <section class="card">
-    <div class="section-title">
-      <h2 id="dayTitle">Heute</h2>
-    </div>
-
-    <div id="mealList"></div>
-  </section>
-
-
-  <section class="card" aria-labelledby="analysisStartTitle">
+  <section class="card panel input-card" data-panel="main" aria-labelledby="analysisStartTitle">
     <h2 id="analysisStartTitle">Mahlzeit sprechen</h2>
     <p class="notice">Beschreibe Lebensmittel und bekannte Mengen. Die Beschreibung hat bei einer kombinierten Analyse Vorrang vor dem Foto.</p>
-    <button id="speechButton" class="speech-button" type="button">🎙️ Aufnahme starten</button>
+    <div class="primary-actions">
+      <button id="speechButton" class="speech-button" type="button">🎙️ Aufnahme starten</button>
+      <button id="textAnalysisButton" class="analysis-choice" type="button">Textsuche analysieren</button>
+    </div>
     <p id="speechState" class="notice" role="status">Sprachbefehl zum Löschen: „Eingabe löschen“.</p>
     <label for="mealSearchText">Erkannter oder eingegebener Text</label>
     <textarea id="mealSearchText" rows="4" maxlength="500" placeholder="Zum Beispiel: Zwei Eier mit einer Scheibe Vollkornbrot"></textarea>
     <div class="speech-actions">
       <button id="clearSpeechButton" class="secondary danger-secondary" type="button">Text löschen</button>
-      <button id="textAnalysisButton" class="analysis-choice" type="button">Beschreibung analysieren</button>
     </div>
-    <label for="portionSize">Portionsgröße (optional)</label>
-    <select id="portionSize">
-      <option value="">Nicht angegeben</option>
-      <option value="small">Kleine Portion</option>
-      <option value="medium" selected>Mittlere Portion</option>
-      <option value="large">Große Portion</option>
-    </select>
-    <p class="notice">Optional danach ein Foto ergänzen. Ein zweites Foto kann die Mengenschätzung verbessern.</p>
-    <button id="secondPhotoButton" class="secondary" type="button" disabled>📷 Zweites Foto ergänzen</button>
-    <input id="secondPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+  </section>
+
+  <section class="card panel photo-panel" data-panel="photo" aria-labelledby="photoTitle">
+    <h2 id="photoTitle">Fotoanalyse</h2>
+    <p class="notice">Die Fotoanalyse benötigt Internet. Optional kannst du Lebensmittel und Mengen beschreiben; diese Beschreibung wird zusammen mit dem Foto ausgewertet.</p>
+    <label for="photoDescription">Beschreibung zum Foto (optional)</label>
+    <textarea id="photoDescription" rows="4" maxlength="500" placeholder="Zum Beispiel: Pasta mit Tomatensoße, etwa ein halber Teller"></textarea>
+    <button class="camera-button photo-action" id="cameraButton" type="button">📷 Foto analysieren</button>
+    <p class="notice">Nach dem ersten Foto kannst du im Ergebnis ein zweites Foto ergänzen, um die Mengenschätzung zu verbessern.</p>
   </section>
 
 
-  <section class="card analysis" id="analysisCard">
+  <section class="card panel analysis" data-panel="main photo" id="analysisCard">
 
     <h2>Text-/Fotoanalyse</h2>
 
@@ -162,9 +163,18 @@
         Mahlzeit speichern
       </button>
     </div>
+    <button id="secondPhotoButton" class="secondary" type="button" disabled>📷 Zweites Foto ergänzen</button>
+    <input id="secondPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
     <button class="secondary" id="cancelButton" type="button">Verwerfen</button>
   </section>
-  <section class="card" aria-label="Sicherung">
+  <section class="card panel meals-card" data-panel="main">
+    <div class="section-title">
+      <h2 id="dayTitle">Heute</h2>
+    </div>
+
+    <div id="mealList"></div>
+  </section>
+  <section class="card panel data-panel" data-panel="data" aria-label="Sicherung">
     <h2>Deine Daten</h2>
     <p class="notice">Mahlzeiten bleiben auf diesem Gerät. CSV-Sicherungen enthalten Datum und Uhrzeit der Erfassung. Sichere sie regelmäßig in „Dateien“.</p>
     <button id="exportAll" class="secondary" type="button">Alle Tage als CSV sichern</button>
@@ -173,8 +183,7 @@
     <input id="csvInput" type="file" accept=".csv,text/csv" hidden>
     <p class="notice">Eine vorhandene meals.csv aus der bisherigen Server-App kannst du hier importieren. Vorhandene Mahlzeiten werden nicht überschrieben.</p>
   </section>
-  <details id="settings" class="card">
-    <summary>Einstellungen &amp; Installation</summary>
+  <section id="settings" class="card panel settings-panel" data-panel="settings">
     <form id="goalForm">
       <h3>Tagesziel</h3>
       <p class="notice">Das gewünschte Kalorienziel nach Rücksprache mit Arzt oder Ernährungsfachkraft eintragen.</p>
@@ -194,6 +203,13 @@
         <option value="gpt-6-luna">GPT-6 Luna – günstig</option>
       </select>
       <p class="notice">Sol ist die Vorgabe. Astra kann schwierige Bilder besser auswerten, kostet pro Analyse aber deutlich mehr.</p>
+      <label for="portionSize">Standard-Portionsgröße</label>
+      <select id="portionSize">
+        <option value="">Nicht angegeben</option>
+        <option value="small">Kleine Portion</option>
+        <option value="medium" selected>Mittlere Portion</option>
+        <option value="large">Große Portion</option>
+      </select>
       <label class="checkbox"><input id="rememberKey" type="checkbox"> Schlüssel auf diesem Gerät merken</label>
       <p class="notice">Ohne Häkchen bleibt der Schlüssel nur bis zum Neuladen verfügbar. Mit Häkchen liegt er unverschlüsselt im Website-Speicher; verwende das nur auf deinem persönlichen Gerät.</p>
       <button class="secondary" type="submit">Einstellungen übernehmen</button>
@@ -203,8 +219,8 @@
     <h3>Auf dem iPad installieren</h3>
     <p class="notice">Diese Seite in Safari über HTTPS öffnen → Teilen → Zum Home-Bildschirm → als Web-App öffnen. Danach Didi vom Home-Bildschirm starten und erst dort Schlüssel sowie CSV-Daten einrichten.</p>
     <p id="offlineState" class="notice" role="status">Offline-Start wird vorbereitet …</p>
-  </details>
-  <p class="notice">Zur Analyse wird dein Foto an OpenAI gesendet. Kalorien und Nährwerte sind Schätzungen. Mahlzeiten werden lokal auf diesem Gerät gespeichert und sind über den Kalender abrufbar. CSV dient als Sicherung und zum Übertragen.</p>
+  </section>
+  <p class="notice footer-notice">Zur Analyse werden dein Text und dein Foto an OpenAI gesendet. Kalorien und Nährwerte sind Schätzungen. Mahlzeiten werden lokal auf diesem Gerät gespeichert und sind über den Kalender abrufbar. CSV dient als Sicherung und zum Übertragen.</p>
 </div>
 
 
@@ -214,11 +230,6 @@
   accept="image/jpeg,image/png,image/webp"
   capture="environment"
 />
-
-<button class="camera-button" id="cameraButton" type="button">
-  📷 Foto analysieren
-</button>
-
 
 <script src="./app.js" type="module"></script>
 </body>
