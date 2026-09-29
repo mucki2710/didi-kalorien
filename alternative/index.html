@@ -29,17 +29,19 @@
   <nav class="tabs" aria-label="Bereiche">
     <button class="tab is-active" type="button" data-tab="main" aria-selected="true">Erfassen</button>
     <button class="tab" type="button" data-tab="photo" aria-selected="false">Fotoanalyse</button>
-    <button class="tab" type="button" data-tab="day" aria-selected="false">Tag</button>
+    <button class="tab" type="button" data-tab="day" aria-selected="false">Kalender</button>
     <button class="tab" type="button" data-tab="range" aria-selected="false">Auswertung</button>
     <button class="tab" type="button" data-tab="data" aria-selected="false">Daten</button>
     <button class="tab" type="button" data-tab="settings" aria-selected="false">Einstellungen</button>
   </nav>
 
   <section class="card panel day-panel" data-panel="day" aria-label="Kalender">
-    <label for="dayPicker">Tag auswählen</label>
+    <h2>Kalender</h2>
+    <p class="notice">Wähle hier das Datum für die Mahlzeitenliste und neue Einträge. Es dient auch als Tag oder Wochenanker in der Auswertung.</p>
+    <label for="dayPicker">Datum auswählen</label>
     <div class="calendar-row">
       <button id="previousDay" class="secondary" type="button" aria-label="Vorheriger Tag">‹</button>
-      <input id="dayPicker" type="date" required aria-label="Tag auswählen">
+      <input id="dayPicker" type="date" required aria-label="Datum auswählen">
       <button id="nextDay" class="secondary" type="button" aria-label="Nächster Tag">›</button>
     </div>
     <div class="calendar-actions">
