@@ -85,6 +85,13 @@
       font-size: 28px;
     }
 
+    .brand-bike {
+      display: inline-block;
+      margin-left: 4px;
+      font-size: 21px;
+      vertical-align: 2px;
+    }
+
     .date {
       color: var(--muted);
       font-size: 14px;
