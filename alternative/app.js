@@ -18,6 +18,7 @@ let saving = false;
 let draftId;
 let manualMealLabel = '';
 let apiKey = '';
+let updateReloadPending = false;
 const AVAILABLE_MODELS = ['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna'];
 let model = 'gpt-6-sol';
 let dailyGoal = DEFAULT_DAILY_GOAL;
@@ -118,6 +119,7 @@ function discard() {
   $('mealHint').value = '';
   $('mealSearchText').value = '';
   $('photoDescription').value = '';
+  preserveTextDraft();
   clearPreview();
   $('analysisCard').style.display = 'none';
   $('photoInput').value = '';
@@ -238,6 +240,7 @@ $('textAnalysisButton').addEventListener('click', async () => {
   if (!apiKey) { document.querySelector('[data-tab="settings"]').click(); message('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
   message();
   $('mealSearchText').value = '';
+  preserveTextDraft();
   if (currentPhoto) {
     await runPhotoAnalysis([currentPhoto, secondPhoto].filter(Boolean), description, true);
     return;
@@ -598,6 +601,31 @@ $('csvInput').addEventListener('change', async event => {
   finally { event.target.value = ''; $('importButton').disabled = false; }
 });
 loadSettings();
+function restoreTextDraft() {
+  try {
+    const draft = JSON.parse(sessionStorage.getItem('didi-update-draft') || '{}');
+    if (typeof draft.mealSearchText === 'string') $('mealSearchText').value = draft.mealSearchText;
+    if (typeof draft.photoDescription === 'string') $('photoDescription').value = draft.photoDescription;
+    sessionStorage.removeItem('didi-update-draft');
+  } catch { /* Session-only draft restoration is best effort. */ }
+}
+function preserveTextDraft() {
+  try {
+    sessionStorage.setItem('didi-update-draft', JSON.stringify({
+      mealSearchText: $('mealSearchText').value,
+      photoDescription: $('photoDescription').value,
+    }));
+  } catch { /* The app still updates if session storage is unavailable. */ }
+}
+function hasUnsavedAnalysis() {
+  return Boolean(requestController || currentFoods.length || currentPhoto || secondPhoto);
+}
+function reloadForPendingUpdate() {
+  if (!updateReloadPending || hasUnsavedAnalysis()) return;
+  preserveTextDraft();
+  window.location.reload();
+}
+restoreTextDraft();
 function connectionStatus() {
   $('connection').textContent = navigator.onLine ? 'Lokal gespeichert · Sprach- und Fotoanalyse benötigt Internet' : 'Offline · Kalender und Mahlzeiten verfügbar';
 }
@@ -605,10 +633,48 @@ window.addEventListener('online', connectionStatus);
 window.addEventListener('offline', connectionStatus);
 connectionStatus();
 if ('serviceWorker' in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register('./sw.js').then(async () => {
+  const hadController = Boolean(navigator.serviceWorker.controller);
+  let lastUpdateCheck = 0;
+  const checkForAppUpdate = async () => {
+    if (!navigator.onLine || Date.now() - lastUpdateCheck < 60000) return;
+    lastUpdateCheck = Date.now();
+    try { await (await navigator.serviceWorker.getRegistration('./'))?.update(); }
+    catch { /* A failed update check does not affect offline use. */ }
+  };
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!hadController) return;
+    if (hasUnsavedAnalysis()) {
+      updateReloadPending = true;
+      message('Neue Version bereit. Bitte die laufende Analyse speichern oder verwerfen; danach wird automatisch aktualisiert.');
+      return;
+    }
+    preserveTextDraft();
+    window.location.reload();
+  });
+  window.addEventListener('online', checkForAppUpdate);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') checkForAppUpdate();
+  });
+  $('mealSearchText').addEventListener('input', () => {
+    try { sessionStorage.setItem('didi-update-draft', JSON.stringify({ mealSearchText: $('mealSearchText').value, photoDescription: $('photoDescription').value })); } catch { /* Best effort. */ }
+  });
+  $('photoDescription').addEventListener('input', () => {
+    try { sessionStorage.setItem('didi-update-draft', JSON.stringify({ mealSearchText: $('mealSearchText').value, photoDescription: $('photoDescription').value })); } catch { /* Best effort. */ }
+  });
+  navigator.serviceWorker.register('./sw.js').then(async registration => {
     await navigator.serviceWorker.ready;
+    await checkForAppUpdate();
     $('offlineState').textContent = 'Offline-Start vorbereitet. Auf dem iPad über Teilen → Zum Home-Bildschirm installieren.';
   }).catch(() => { $('offlineState').textContent = 'Offline-Start konnte nicht eingerichtet werden. Bitte online neu laden.'; });
+  $('cancelButton').addEventListener('click', () => reloadForPendingUpdate());
+  $('saveButton').addEventListener('click', () => {
+    if (!updateReloadPending) return;
+    const waitForSave = () => {
+      if (saving) requestAnimationFrame(waitForSave);
+      else reloadForPendingUpdate();
+    };
+    requestAnimationFrame(waitForSave);
+  });
 } else {
   $('offlineState').textContent = 'Für Installation und Offline-Start diese App über eine HTTPS-Adresse öffnen.';
 }

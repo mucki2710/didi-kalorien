@@ -1,7 +1,10 @@
-const CACHE = 'didi-alternative-v8';
+const CACHE = 'didi-alternative-v9';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './csv.js', './storage.js', './openai.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
+  event.waitUntil(Promise.all([
+    caches.open(CACHE).then(cache => cache.addAll(ASSETS)),
+    self.skipWaiting(),
+  ]));
 });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
