@@ -1,8 +1,9 @@
-const CACHE = 'didi-alternative-v9';
+const CACHE = 'didi-alternative-v10';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './csv.js', './storage.js', './openai.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const INSTALL_REQUESTS = ASSETS.map(path => new Request(new URL(path, self.registration.scope), { cache: 'reload' }));
 self.addEventListener('install', event => {
   event.waitUntil(Promise.all([
-    caches.open(CACHE).then(cache => cache.addAll(ASSETS)),
+    caches.open(CACHE).then(cache => cache.addAll(INSTALL_REQUESTS)),
     self.skipWaiting(),
   ]));
 });
@@ -20,7 +21,7 @@ self.addEventListener('fetch', event => {
   if (!allowed.includes(url.href)) return;
   event.respondWith(caches.open(CACHE).then(async cache => {
     try {
-      const response = await fetch(event.request);
+      const response = await fetch(event.request, { cache: 'reload' });
       if (response.ok) await cache.put(event.request, response.clone());
       return response;
     } catch {

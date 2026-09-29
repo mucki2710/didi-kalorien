@@ -18,6 +18,7 @@ let loadingVersion = 0;
 let saving = false;
 let draftId;
 let manualMealLabel = '';
+let currentTextSource = '';
 let apiKey = '';
 let updateReloadPending = false;
 const AVAILABLE_MODELS = ['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna'];
@@ -116,6 +117,7 @@ function discard() {
   currentFoods = [];
   draftId = undefined;
   manualMealLabel = '';
+  currentTextSource = '';
   currentPhoto = undefined;
   secondPhoto = undefined;
   $('mealHint').value = '';
@@ -239,14 +241,34 @@ $('textAnalysisButton').addEventListener('click', async () => {
     $('mealSearchText').focus();
     return;
   }
-  if (!apiKey) { document.querySelector('[data-tab="settings"]').click(); message('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
-  message();
-  $('mealSearchText').value = '';
-  preserveTextDraft();
   if (currentPhoto) {
+    if (!apiKey) { document.querySelector('[data-tab="settings"]').click(); message('Bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
+    message();
+    $('mealSearchText').value = '';
+    preserveTextDraft();
+    currentTextSource = '';
     await runPhotoAnalysis([currentPhoto, secondPhoto].filter(Boolean), description, true);
     return;
   }
+  let cachedFoods;
+  try { cachedFoods = await store.findTextAnalysis(description, $('portionSize').value, model); }
+  catch { cachedFoods = null; }
+  if (cachedFoods) {
+    discard();
+    currentTextSource = description;
+    $('analysisCard').style.display = 'block';
+    $('analysisCard').scrollIntoView({ behavior: 'smooth' });
+    $('status').style.display = 'none';
+    applyAnalysis({ foods: cachedFoods, note: 'Exakter lokaler Treffer. Bitte prüfe die gespeicherten Mengen und Nährwerte.' });
+    message('Gespeicherte Mahlzeit wiederverwendet. Für diese Anfrage wurde OpenAI nicht aufgerufen.');
+    return;
+  }
+  if (!apiKey) { document.querySelector('[data-tab="settings"]').click(); message('Für eine neue Mahlzeit bitte zuerst deinen API-Schlüssel in den Einstellungen eintragen.', true); return; }
+  message();
+  discard();
+  currentTextSource = description;
+  $('mealSearchText').value = '';
+  preserveTextDraft();
   $('analysisCard').style.display = 'block';
   $('analysisCard').scrollIntoView({ behavior: 'smooth' });
   $('status').textContent = '🔍 Beschreibung wird analysiert …';
@@ -394,6 +416,10 @@ async function saveMeal() {
   $('cameraButton').disabled = true;
   try {
     await store.add(meal);
+    if (currentTextSource) {
+      try { await store.saveTextAnalysis(currentTextSource, $('portionSize').value, model, meal.foods, meal.id); }
+      catch { /* Saving a meal must not fail if the optional lookup cache is unavailable. */ }
+    }
     discard();
     await loadMeals();
     message(`Mahlzeit für ${new Intl.DateTimeFormat('de-DE').format(new Date(meal.date + 'T12:00:00'))} auf diesem Gerät gespeichert.`);
