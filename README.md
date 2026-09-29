@@ -40,11 +40,16 @@ automatisch bei Änderungen am Branch `main` und kann zusätzlich manuell gestar
    Pages → Run workflow** die Veröffentlichung manuell starten.
 4. Die anschließend angezeigte HTTPS-Adresse auf dem iPad öffnen.
 
-Der Workflow veröffentlicht ausschließlich `public/`, niemals `.env` oder CSV-Daten.
+Der Workflow veröffentlicht ausschließlich die öffentliche App aus `public/`, niemals `.env` oder CSV-Daten.
+Die alternative Variante wird beim Build nach `public/alternative/` kopiert und ist unter
+<https://mucki2710.github.io/didi-kalorien/alternative/> erreichbar.
 Relative Dateipfade unterstützen auch URLs wie `https://name.github.io/didi-kalorien/`.
-Für Updates den Workflow erneut starten. Bei Änderungen an App-Dateien außerdem die
-Cache-Version in `public/sw.js` erhöhen. Nach der Online-Aktualisierung alle Didi-Fenster
-schließen und erneut öffnen, damit ein wartender Service Worker aktiv werden kann.
+Jeder Push auf `main` startet den Workflow automatisch; manuelles Starten ist nur zum
+Wiederholen einer Veröffentlichung nötig. Für Änderungen an der Haupt-App die Cache-Version
+in `public/sw.js`, für Änderungen an der Alternative die Version in `alternative/sw.js`
+erhöhen. Die Alternative prüft beim Öffnen, bei Rückkehr in den Vordergrund und nach
+Wiederverbindung auf Updates. Ein Cache-Reset ist dafür nicht nötig; bei einer offenen,
+ungespeicherten Analyse wartet sie mit dem Neuladen, bis diese gespeichert oder verworfen ist.
 
 Für andere statische HTTPS-Hoster kann ein ZIP erstellt werden:
 
