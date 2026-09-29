@@ -296,8 +296,9 @@ if (SpeechRecognition) {
   speechRecognition.maxAlternatives = 1;
   speechRecognition.onstart = () => {
     $('speechButton').classList.add('listening');
-    $('speechButton').textContent = '⏹️ Aufnahme stoppen';
-    $('speechState').textContent = 'Aufnahme läuft. Zum Beenden erneut drücken.';
+    $('speechButton').textContent = '🎙️ Aufnahme läuft …';
+    $('speechButton').disabled = true;
+    $('speechState').textContent = 'Sprich jetzt. Nach einer kurzen Pause endet die Aufnahme automatisch und der Text wird eingefügt.';
     clearTimeout(speechTimer);
     speechTimer = setTimeout(() => speechRecognition.stop(), 30000);
   };
@@ -323,13 +324,11 @@ if (SpeechRecognition) {
     clearTimeout(speechTimer);
     $('speechButton').classList.remove('listening');
     $('speechButton').textContent = '🎙️ Aufnahme starten';
+    $('speechButton').disabled = false;
   };
   $('speechButton').addEventListener('click', () => {
-    if ($('speechButton').classList.contains('listening')) speechRecognition.stop();
-    else {
-      try { speechRecognition.start(); }
-      catch { $('speechState').textContent = 'Aufnahme konnte nicht gestartet werden. Bitte erneut versuchen oder die Mikrofontaste der Tastatur verwenden.'; }
-    }
+    try { speechRecognition.start(); }
+    catch { $('speechState').textContent = 'Aufnahme konnte nicht gestartet werden. Bitte erneut versuchen oder die Mikrofontaste der Tastatur verwenden.'; }
   });
 } else {
   $('speechButton').disabled = true;
