@@ -342,11 +342,32 @@
 .range-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .range-grid label { color: var(--muted); font-size: 13px; }
 .range-grid input { margin-top: 6px; color: var(--text); }
+.range-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; margin: 10px 0; border-radius: 12px; background: #e8efe9; }
+.range-mode { min-height: 42px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.range-mode.is-active { background: white; color: var(--text); box-shadow: 0 2px 7px rgba(20, 30, 50, 0.08); }
 .range-result { margin-top: 16px; padding: 14px; border-radius: 14px; background: #f0f8f4; }
 .range-result > span, .range-result small { display: block; color: var(--muted); }
 .range-result strong { display: block; margin: 4px 0; font-size: 26px; }
 .range-result small { line-height: 1.4; }
+.range-achievement { margin: 0 0 14px; font-weight: 700; }
+.goal-chart { display: grid; gap: 8px; max-height: 360px; overflow-y: auto; padding: 2px 3px 8px 0; }
+.goal-chart-row { display: grid; grid-template-columns: 88px minmax(60px, 1fr) 86px; gap: 8px; align-items: center; min-height: 24px; }
+.goal-chart-label, .goal-chart-value { font-size: 12px; }
+.goal-chart-label { color: var(--muted); white-space: nowrap; }
+.goal-chart-value { text-align: right; font-weight: 650; white-space: nowrap; }
+.goal-chart-value.no-entry { color: var(--muted); font-weight: 500; }
+.goal-chart-track { position: relative; height: 14px; overflow: visible; border-radius: 8px; background: #e1e8e3; }
+.goal-chart-bar { position: absolute; inset: 0 auto 0 0; min-width: 0; border-radius: inherit; }
+.goal-chart-bar.met { background: var(--primary); }
+.goal-chart-bar.under { background: #d99032; }
+.goal-chart-target { position: absolute; top: -3px; bottom: -3px; width: 2px; background: #263b31; }
+.goal-legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 10px 0 14px; color: var(--muted); font-size: 12px; }
+.goal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend-bar { width: 12px; height: 12px; border-radius: 3px; background: var(--primary); }
+.legend-bar.under { background: #d99032; }
+.legend-target { width: 2px; height: 14px; background: #263b31; }
 @media (max-width: 360px) { .range-grid { grid-template-columns: 1fr; } }
+@media (max-width: 380px) { .goal-chart-row { grid-template-columns: 70px minmax(45px, 1fr) 74px; gap: 5px; } .goal-chart-label, .goal-chart-value { font-size: 11px; } }
 
 .photo-action {
       position: static;

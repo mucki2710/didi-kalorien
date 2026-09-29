@@ -50,8 +50,14 @@
   </section>
 
   <section class="card panel range-panel" data-panel="range" aria-labelledby="rangeTitle">
-    <h2 id="rangeTitle">Zeitraum auswerten</h2>
-    <div class="range-grid">
+    <h2 id="rangeTitle">Ziel-Auswertung</h2>
+    <div class="range-modes" role="group" aria-label="Auswertungsansicht">
+      <button class="range-mode is-active" type="button" data-range-mode="day" aria-pressed="true">Tag</button>
+      <button class="range-mode" type="button" data-range-mode="week" aria-pressed="false">Woche</button>
+      <button class="range-mode" type="button" data-range-mode="period" aria-pressed="false">Zeitraum</button>
+    </div>
+    <p id="rangeContext" class="notice"></p>
+    <div id="rangeDates" class="range-grid" hidden>
       <label for="rangeStart">Von
         <input id="rangeStart" type="date" required>
       </label>
@@ -59,10 +65,17 @@
         <input id="rangeEnd" type="date" required>
       </label>
     </div>
-    <button id="calculateRange" class="secondary" type="button">Kalorien berechnen</button>
+    <button id="calculateRange" class="secondary" type="button">Auswertung aktualisieren</button>
     <div id="rangeResult" class="range-result" role="status" aria-live="polite" hidden>
-      <span>Kalorien im Zeitraum</span>
+      <span id="rangeMetricLabel">Kalorien</span>
       <strong><span id="rangeCalories">0</span> kcal</strong>
+      <p id="rangeAchievement" class="range-achievement"></p>
+      <div id="rangeChart" class="goal-chart" aria-label="Tageskalorien im Vergleich zum Ziel"></div>
+      <div class="goal-legend" aria-label="Legende">
+        <span><i class="legend-bar met"></i> Ziel erreicht</span>
+        <span><i class="legend-bar under"></i> Unter dem Ziel</span>
+        <span><i class="legend-target"></i> Tagesziel</span>
+      </div>
       <small id="rangeDetails"></small>
     </div>
   </section>

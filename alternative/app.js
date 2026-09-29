@@ -13,6 +13,7 @@ let secondPhoto;
 let requestController;
 let storageReadable = false;
 let selectedDate = localDate();
+let selectedRangeMode = 'day';
 let loadingVersion = 0;
 let saving = false;
 let draftId;
@@ -50,6 +51,7 @@ async function loadMeals() {
     if (version !== loadingVersion) return;
     meals = data;
     renderDashboard();
+    renderGoalAnalysis();
   } catch (error) {
     if (version !== loadingVersion) return;
     $('mealList').textContent = 'Daten konnten nicht geladen werden.';
@@ -467,6 +469,8 @@ $('todayButton').addEventListener('click', () => selectDate(localDate()));
 $('reloadDay').addEventListener('click', () => { message(); loadMeals(); });
 $('rangeStart').value = localDate();
 $('rangeEnd').value = localDate();
+$('rangeStart').max = localDate();
+$('rangeEnd').max = localDate();
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -483,30 +487,167 @@ document.querySelectorAll('.tab').forEach(tab => {
 });
 document.querySelector('.tab.is-active')?.click();
 
-$('calculateRange').addEventListener('click', async () => {
-  const start = $('rangeStart').value;
-  const end = $('rangeEnd').value;
+function isoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+function dateDaysBetween(start, end) {
+  const [startYear, startMonth, startDay] = start.split('-').map(Number);
+  const [endYear, endMonth, endDay] = end.split('-').map(Number);
+  return Math.round((Date.UTC(endYear, endMonth - 1, endDay) - Date.UTC(startYear, startMonth - 1, startDay)) / 86400000) + 1;
+}
+function displayDate(date, options = { day: 'numeric', month: 'short' }) {
+  return new Intl.DateTimeFormat('de-DE', options).format(new Date(`${date}T12:00:00`));
+}
+function rangeForMode() {
+  if (selectedRangeMode === 'period') return { start: $('rangeStart').value, end: $('rangeEnd').value };
+  if (selectedRangeMode === 'day') return { start: selectedDate, end: selectedDate };
+  const startDate = new Date(`${selectedDate}T12:00:00`);
+  startDate.setDate(startDate.getDate() - (startDate.getDay() + 6) % 7);
+  const endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 6);
+  return { start: isoDate(startDate), end: isoDate(endDate) > localDate() ? localDate() : isoDate(endDate) };
+}
+function chartEntries(start, end, days, caloriesByDate) {
+  const weekly = selectedRangeMode === 'week' || (selectedRangeMode === 'period' && days > 14);
+  if (!weekly) {
+    const entries = [];
+    for (let offset = 0; offset < days; offset++) {
+      const date = new Date(`${start}T12:00:00`);
+      date.setDate(date.getDate() + offset);
+      const key = isoDate(date);
+      const value = caloriesByDate.get(key);
+      entries.push({
+        label: displayDate(key, { weekday: 'short', day: 'numeric', month: '2-digit' }),
+        calories: value?.calories || 0,
+        trackedDays: value ? 1 : 0,
+        achievedDays: value && value.calories >= dailyGoal ? 1 : 0,
+        target: dailyGoal,
+      });
+    }
+    return entries;
+  }
+  const first = new Date(`${start}T12:00:00`);
+  first.setDate(first.getDate() - (first.getDay() + 6) % 7);
+  const last = new Date(`${end}T12:00:00`);
+  const entries = [];
+  for (const weekStart = first; weekStart <= last; weekStart.setDate(weekStart.getDate() + 7)) {
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const segmentStart = isoDate(weekStart) < start ? start : isoDate(weekStart);
+    const segmentEnd = isoDate(weekEnd) > end ? end : isoDate(weekEnd);
+    let calories = 0;
+    let trackedDays = 0;
+    let achievedDays = 0;
+    for (const [date, value] of caloriesByDate) {
+      if (date < segmentStart || date > segmentEnd) continue;
+      calories += value.calories;
+      trackedDays++;
+      if (value.calories >= dailyGoal) achievedDays++;
+    }
+    entries.push({
+      label: `${displayDate(segmentStart)}–${displayDate(segmentEnd)}`,
+      calories,
+      trackedDays,
+      achievedDays,
+      target: dailyGoal * trackedDays,
+    });
+  }
+  return entries;
+}
+function renderGoalChart(entries) {
+  const chart = $('rangeChart');
+  chart.replaceChildren();
+  const maximum = Math.max(dailyGoal, ...entries.map(entry => entry.calories), ...entries.map(entry => entry.target)) * 1.08;
+  chart.setAttribute('role', 'list');
+  entries.forEach(entry => {
+    const row = document.createElement('div');
+    row.className = 'goal-chart-row';
+    row.setAttribute('role', 'listitem');
+    const label = document.createElement('span');
+    label.className = 'goal-chart-label';
+    label.textContent = entry.label;
+    const track = document.createElement('div');
+    track.className = 'goal-chart-track';
+    const bar = document.createElement('span');
+    bar.className = `goal-chart-bar ${entry.trackedDays && entry.achievedDays === entry.trackedDays ? 'met' : 'under'}`;
+    bar.style.width = `${Math.min(100, entry.calories / maximum * 100)}%`;
+    track.append(bar);
+    if (entry.trackedDays) {
+      const target = document.createElement('span');
+      target.className = 'goal-chart-target';
+      target.style.left = `${Math.min(100, entry.target / maximum * 100)}%`;
+      track.append(target);
+    }
+    const value = document.createElement('span');
+    value.className = `goal-chart-value${entry.trackedDays ? '' : ' no-entry'}`;
+    value.textContent = entry.trackedDays ? `${Math.round(entry.calories).toLocaleString('de-DE')} kcal` : 'Keine Erfassung';
+    row.append(label, track, value);
+    chart.append(row);
+  });
+}
+async function renderGoalAnalysis() {
+  const { start, end } = rangeForMode();
+  $('rangeDates').hidden = selectedRangeMode !== 'period';
+  const modeContext = selectedRangeMode === 'day'
+    ? `Kalendertag: ${displayDate(start, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}. Das Datum stellst du im Reiter „Tag“ ein.`
+    : selectedRangeMode === 'week'
+      ? `Kalenderwoche: ${displayDate(start, { day: 'numeric', month: 'long' })} bis ${displayDate(end, { day: 'numeric', month: 'long', year: 'numeric' })}. Wähle den Wochenanker im Reiter „Tag“.`
+      : 'Wähle den gewünschten Zeitraum. Zukünftige Tage sind ausgeschlossen.';
+  $('rangeContext').textContent = `${modeContext} Vergleich mit dem aktuell eingestellten Tagesziel (${dailyGoal.toLocaleString('de-DE')} kcal).`;
   $('rangeResult').hidden = true;
-  if (!validDate(start) || !validDate(end)) {
-    message('Bitte für den Zeitraum ein gültiges Start- und Enddatum wählen.', true);
+  if (!validDate(start) || !validDate(end) || start > end) return;
+  if (start > localDate() || end > localDate()) {
+    message('Die Auswertung ist nur bis einschließlich heute möglich.', true);
     return;
   }
-  if (start > end) {
-    message('Das Startdatum muss vor oder am Enddatum liegen.', true);
+  const days = dateDaysBetween(start, end);
+  if (days > 3660) {
+    message('Bitte wähle einen Zeitraum von höchstens zehn Jahren.', true);
     return;
   }
   $('calculateRange').disabled = true;
   try {
     const rangeMeals = await store.range(start, end);
-    const calories = rangeMeals.reduce((sum, meal) => sum + meal.calories, 0);
-    const days = Math.round((new Date(`${end}T12:00:00`) - new Date(`${start}T12:00:00`)) / 86400000) + 1;
-    $('rangeCalories').textContent = Math.round(calories).toLocaleString('de-DE');
-    $('rangeDetails').textContent = `${new Intl.DateTimeFormat('de-DE').format(new Date(`${start}T12:00:00`))} bis ${new Intl.DateTimeFormat('de-DE').format(new Date(`${end}T12:00:00`))} · ${days} Tag${days === 1 ? '' : 'e'} · ${rangeMeals.length} Mahlzeit${rangeMeals.length === 1 ? '' : 'en'}`;
+    const caloriesByDate = new Map();
+    for (const meal of rangeMeals) {
+      const value = caloriesByDate.get(meal.date) || { calories: 0 };
+      value.calories += meal.calories;
+      caloriesByDate.set(meal.date, value);
+    }
+    const totalCalories = rangeMeals.reduce((sum, meal) => sum + meal.calories, 0);
+    const trackedDays = [...caloriesByDate.values()];
+    const achievedDays = trackedDays.filter(value => value.calories >= dailyGoal).length;
+    $('rangeMetricLabel').textContent = selectedRangeMode === 'day'
+      ? `Kalorien am ${displayDate(start, { day: 'numeric', month: 'long' })}`
+      : selectedRangeMode === 'week' ? 'Kalorien in der Woche' : 'Kalorien im Zeitraum';
+    $('rangeCalories').textContent = Math.round(totalCalories).toLocaleString('de-DE');
+    $('rangeAchievement').textContent = trackedDays.length
+      ? selectedRangeMode === 'day'
+        ? achievedDays ? 'Tagesziel erreicht' : `Noch ${Math.max(0, Math.round(dailyGoal - totalCalories)).toLocaleString('de-DE')} kcal bis zum Tagesziel`
+        : `Tagesziel an ${achievedDays} von ${trackedDays.length} erfassten Tagen erreicht`
+      : 'Keine Mahlzeiten erfasst. Dieser Zeitraum wird nicht als 0 kcal gewertet.';
+    renderGoalChart(chartEntries(start, end, days, caloriesByDate));
+    $('rangeDetails').textContent = `${displayDate(start, { day: 'numeric', month: 'long', year: 'numeric' })} bis ${displayDate(end, { day: 'numeric', month: 'long', year: 'numeric' })} · ${days} ${days === 1 ? 'Tag' : 'Tage'} · ${rangeMeals.length} ${rangeMeals.length === 1 ? 'Mahlzeit' : 'Mahlzeiten'} · ${trackedDays.length} ${trackedDays.length === 1 ? 'Tag' : 'Tage'} mit Erfassung`;
     $('rangeResult').hidden = false;
     message();
   } catch (error) { message(error.message, true); }
   finally { $('calculateRange').disabled = false; }
+}
+document.querySelectorAll('[data-range-mode]').forEach(button => {
+  button.addEventListener('click', () => {
+    selectedRangeMode = button.dataset.rangeMode;
+    document.querySelectorAll('[data-range-mode]').forEach(modeButton => {
+      const active = modeButton === button;
+      modeButton.classList.toggle('is-active', active);
+      modeButton.setAttribute('aria-pressed', String(active));
+    });
+    renderGoalAnalysis();
+  });
 });
+$('calculateRange').addEventListener('click', renderGoalAnalysis);
+$('rangeStart').addEventListener('change', () => { if (selectedRangeMode === 'period') renderGoalAnalysis(); });
+$('rangeEnd').addEventListener('change', () => { if (selectedRangeMode === 'period') renderGoalAnalysis(); });
+renderGoalAnalysis();
 renderDashboard();
 initializeMeals();
 
@@ -543,6 +684,7 @@ $('goalForm').addEventListener('submit', event => {
   try { localStorage.setItem('didi-daily-goal', String(dailyGoal)); }
   catch { message('Das Tagesziel konnte auf diesem Gerät nicht dauerhaft gespeichert werden.', true); renderDashboard(); return; }
   renderDashboard();
+  renderGoalAnalysis();
   message(`Tagesziel auf ${dailyGoal.toLocaleString('de-DE')} kcal gesetzt.`);
 });
 $('settingsForm').addEventListener('submit', event => {
