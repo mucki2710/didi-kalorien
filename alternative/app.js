@@ -304,8 +304,31 @@ $('textAnalysisButton').addEventListener('click', async () => {
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let speechRecognition;
 let speechTimer;
+function normalizeSpeechText(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+function appendSpeechWithoutOverlap(existing, incoming) {
+  const current = normalizeSpeechText(existing);
+  const next = normalizeSpeechText(incoming);
+  if (!current) return next;
+  if (!next) return current;
+  const currentLower = current.toLocaleLowerCase('de-DE');
+  const nextLower = next.toLocaleLowerCase('de-DE');
+  if (currentLower === nextLower || currentLower.endsWith(` ${nextLower}`)) return current;
+  if (nextLower === currentLower || nextLower.startsWith(`${currentLower} `)) return next;
+  const currentWords = current.split(' ');
+  const nextWords = next.split(' ');
+  for (let size = Math.min(currentWords.length, nextWords.length, 60); size >= 1; size--) {
+    if (currentWords.slice(-size).join(' ').toLocaleLowerCase('de-DE') ===
+        nextWords.slice(0, size).join(' ').toLocaleLowerCase('de-DE')) {
+      return currentWords.concat(nextWords.slice(size)).join(' ');
+    }
+  }
+  return `${current} ${next}`;
+}
 function clearSpeechText(fromVoice = false) {
   $('mealSearchText').value = '';
+  $('mealSearchText').dispatchEvent(new Event('input', { bubbles: true }));
   $('speechState').textContent = fromVoice
     ? 'Sprachbefehl erkannt: Die Eingabe wurde gelöscht.'
     : 'Die Spracheingabe wurde gelöscht.';
@@ -315,37 +338,89 @@ $('clearSpeechButton').addEventListener('click', () => clearSpeechText());
 if (SpeechRecognition) {
   speechRecognition = new SpeechRecognition();
   speechRecognition.lang = 'de-DE';
-  speechRecognition.interimResults = false;
-  speechRecognition.continuous = false;
+  speechRecognition.interimResults = true;
+  const continuousSpeech = document.body.dataset.speechMode === 'continuous';
+  speechRecognition.continuous = continuousSpeech;
   speechRecognition.maxAlternatives = 1;
+  let baseText = '';
+  let committedSpeech = '';
+  let interimSpeech = '';
+  let speechError = '';
+  let voiceCleared = false;
+  const applySpeechResult = () => {
+    const finalText = appendSpeechWithoutOverlap(baseText, committedSpeech);
+    $('mealSearchText').value = interimSpeech
+      ? appendSpeechWithoutOverlap(finalText, interimSpeech)
+      : finalText;
+    $('mealSearchText').dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  const scheduleSpeechStop = delay => {
+    clearTimeout(speechTimer);
+    speechTimer = setTimeout(() => speechRecognition.stop(), delay);
+  };
   speechRecognition.onstart = () => {
+    baseText = normalizeSpeechText($('mealSearchText').value);
+    committedSpeech = '';
+    interimSpeech = '';
+    speechError = '';
+    voiceCleared = false;
     $('speechButton').classList.add('listening');
     $('speechButton').textContent = '🎙️ Aufnahme läuft …';
     $('speechButton').disabled = true;
     $('speechState').textContent = 'Sprich jetzt. Nach einer kurzen Pause endet die Aufnahme automatisch und der Text wird eingefügt.';
-    clearTimeout(speechTimer);
-    speechTimer = setTimeout(() => speechRecognition.stop(), 30000);
+    scheduleSpeechStop(30000);
   };
   speechRecognition.onresult = event => {
+    interimSpeech = '';
     for (let index = event.resultIndex ?? 0; index < event.results.length; index++) {
-      if (event.results[index].isFinal === false) continue;
-      const spoken = event.results[index][0].transcript.trim();
-      const command = spoken.toLocaleLowerCase('de-DE').replace(/[.!?]/g, '').trim();
-      if (/^(eingabe|text|alles) löschen$/.test(command)) clearSpeechText(true);
-      else {
-        $('mealSearchText').value = [$('mealSearchText').value.trim(), spoken].filter(Boolean).join(' ');
-        $('speechState').textContent = 'Gesprochener Text wurde übernommen. Aufnahme beendet.';
+      const transcript = normalizeSpeechText(event.results[index][0]?.transcript);
+      if (!transcript) continue;
+      if (event.results[index].isFinal) {
+        const command = transcript.toLocaleLowerCase('de-DE').replace(/[.!?]/g, '').trim();
+        if (/^(eingabe|text|alles) löschen$/.test(command)) {
+          baseText = '';
+          committedSpeech = '';
+          interimSpeech = '';
+          voiceCleared = true;
+          clearSpeechText(true);
+          speechRecognition.stop();
+          return;
+        }
+        committedSpeech = appendSpeechWithoutOverlap(committedSpeech, transcript);
+      } else {
+        interimSpeech = transcript;
       }
     }
+    applySpeechResult();
+    $('speechState').textContent = 'Sprache wird erkannt. Nach einer kurzen Pause endet die Aufnahme automatisch.';
+    if (continuousSpeech) scheduleSpeechStop(2000);
   };
   speechRecognition.onerror = event => {
     clearTimeout(speechTimer);
-    $('speechState').textContent = event.error === 'not-allowed'
-      ? 'Mikrofonzugriff wurde nicht erlaubt. Bitte in den Browser-Einstellungen freigeben.'
-      : 'Spracheingabe war nicht möglich. Bitte erneut versuchen oder Text eingeben.';
+    const errors = {
+      'not-allowed': 'Mikrofonzugriff wurde nicht erlaubt. Bitte in den Browser-Einstellungen freigeben.',
+      'service-not-allowed': 'Der Spracherkennungsdienst wurde nicht erlaubt.',
+      'audio-capture': 'Kein Mikrofon gefunden.',
+      'no-speech': 'Keine Sprache erkannt. Bitte erneut versuchen.',
+      network: 'Spracherkennung konnte den Dienst nicht erreichen.',
+      aborted: 'Diktat wurde beendet.',
+    };
+    speechError = errors[event.error] || `Spracheingabe fehlgeschlagen: ${event.error}`;
+    $('speechState').textContent = speechError;
   };
   speechRecognition.onend = () => {
     clearTimeout(speechTimer);
+    const hadSpeech = Boolean(committedSpeech || interimSpeech);
+    if (!voiceCleared) {
+      const finalText = appendSpeechWithoutOverlap(baseText, committedSpeech);
+      $('mealSearchText').value = interimSpeech
+        ? appendSpeechWithoutOverlap(finalText, interimSpeech)
+        : finalText;
+      $('mealSearchText').dispatchEvent(new Event('input', { bubbles: true }));
+      if (!speechError) $('speechState').textContent = hadSpeech
+        ? 'Gesprochener Text wurde übernommen.'
+        : 'Keine Sprache erkannt. Bitte erneut versuchen oder Text eingeben.';
+    }
     $('speechButton').classList.remove('listening');
     $('speechButton').textContent = '🎙️ Aufnahme starten';
     $('speechButton').disabled = false;
@@ -828,10 +903,13 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
   $('photoDescription').addEventListener('input', () => {
     try { sessionStorage.setItem('didi-update-draft', JSON.stringify({ mealSearchText: $('mealSearchText').value, photoDescription: $('photoDescription').value })); } catch { /* Best effort. */ }
   });
-  navigator.serviceWorker.register('./sw.js').then(async registration => {
+  const serviceWorkerPath = new URL(document.body.dataset.speechMode === 'continuous' ? '../sw.js' : './sw.js', window.location.href);
+  navigator.serviceWorker.register(serviceWorkerPath).then(async registration => {
     await navigator.serviceWorker.ready;
     await checkForAppUpdate();
-    $('offlineState').textContent = 'Offline-Start vorbereitet. Auf dem iPad über Teilen → Zum Home-Bildschirm installieren.';
+    $('offlineState').textContent = document.body.dataset.speechMode === 'continuous'
+      ? 'Safari-Start vorbereitet. In Safari über Teilen → Zum Home-Bildschirm hinzufügen; das Icon öffnet diese Seite im Browsermodus.'
+      : 'Offline-Start vorbereitet. Auf dem iPad über Teilen → Zum Home-Bildschirm installieren.';
   }).catch(() => { $('offlineState').textContent = 'Offline-Start konnte nicht eingerichtet werden. Bitte online neu laden.'; });
   $('cancelButton').addEventListener('click', () => reloadForPendingUpdate());
   $('saveButton').addEventListener('click', () => {

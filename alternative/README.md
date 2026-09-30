@@ -22,9 +22,17 @@ Die App läuft vollständig im Browser:
 - Der eigene OpenAI-API-Schlüssel wird nur auf Wunsch im lokalen Website-Speicher abgelegt.
 - Ein Service Worker ermöglicht den Offline-Start nach dem ersten vollständigen Laden.
 
-## Auf dem iPad installieren
+## iPhone-Safari-Version
 
-1. <https://mucki2710.github.io/didi-kalorien/alternative/> in Safari öffnen.
+1. <https://mucki2710.github.io/didi-kalorien/alternative/safari/> in Safari öffnen.
+2. **Teilen → Zum Home-Bildschirm** wählen. Das Icon heißt „Didi Safari“ und öffnet Safari im Browsermodus.
+3. Spracheingabe und Fotoanalyse dort testen. Die Spracheingabe beendet nach kurzer Stille automatisch.
+
+Diese Variante vermeidet den iOS-Standalone-Modus. Mahlzeiten werden im Safari-Speicher dieses Geräts abgelegt; es gibt keine automatische Synchronisierung mit der Android-Standalone-App. Bei Bedarf per CSV übertragen.
+
+## Android-Standalone-Version
+
+1. <https://mucki2710.github.io/didi-kalorien/alternative/> im Browser öffnen.
 2. Warten, bis „Offline-Start vorbereitet“ angezeigt wird.
 3. **Teilen → Zum Home-Bildschirm** wählen.
 4. Didi vom Home-Bildschirm starten.

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#111827">
+  <title>Didi schafft's Safari</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="../icon-192.png">
+  <meta name="apple-mobile-web-app-title" content="Didi Safari">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://api.openai.com; img-src 'self' blob: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+
+  <link rel="stylesheet" href="../styles.css">
+</head>
+
+<body data-speech-mode="continuous">
+
+<div class="app">
+
+  <header class="header">
+    <h1>Didi schafft's <span class="brand-bike" role="img" aria-label="Mann auf Rennrad">🚴‍♂️</span> <small>Safari</small></h1>
+    <div class="date" id="date"></div>
+    <p class="notice" id="connection">Sprach- und Fotoanalyse benötigt Internet</p>
+  </header>
+
+  <div id="message" class="message" role="status" hidden></div>
+
+  <nav class="tabs" aria-label="Bereiche">
+    <button class="tab is-active" type="button" data-tab="main" aria-selected="true">Erfassen</button>
+    <button class="tab" type="button" data-tab="photo" aria-selected="false">Fotoanalyse</button>
+    <button class="tab" type="button" data-tab="day" aria-selected="false">Kalender</button>
+    <button class="tab" type="button" data-tab="range" aria-selected="false">Auswertung</button>
+    <button class="tab" type="button" data-tab="data" aria-selected="false">Daten</button>
+    <button class="tab" type="button" data-tab="settings" aria-selected="false">Einstellungen</button>
+  </nav>
+
+  <section class="card panel day-panel" data-panel="day" aria-label="Kalender">
+    <h2>Kalender</h2>
+    <p class="notice">Wähle hier das Datum für die Mahlzeitenliste und neue Einträge. Es dient auch als Tag oder Wochenanker in der Auswertung.</p>
+    <label for="dayPicker">Datum auswählen</label>
+    <div class="calendar-row">
+      <button id="previousDay" class="secondary" type="button" aria-label="Vorheriger Tag">‹</button>
+      <input id="dayPicker" type="date" required aria-label="Datum auswählen">
+      <button id="nextDay" class="secondary" type="button" aria-label="Nächster Tag">›</button>
+    </div>
+    <div class="calendar-actions">
+      <button id="todayButton" class="secondary" type="button">Heute</button>
+      <button id="reloadDay" class="secondary" type="button">Neu laden</button>
+      <button id="csvDownload" class="secondary" type="button">Tag als CSV</button>
+    </div>
+  </section>
+
+  <section class="card panel range-panel" data-panel="range" aria-labelledby="rangeTitle">
+    <h2 id="rangeTitle">Ziel-Auswertung</h2>
+    <div class="range-modes" role="group" aria-label="Auswertungsansicht">
+      <button class="range-mode is-active" type="button" data-range-mode="day" aria-pressed="true">Tag</button>
+      <button class="range-mode" type="button" data-range-mode="week" aria-pressed="false">Woche</button>
+      <button class="range-mode" type="button" data-range-mode="period" aria-pressed="false">Zeitraum</button>
+    </div>
+    <p id="rangeContext" class="notice"></p>
+    <div id="rangeDates" class="range-grid" hidden>
+      <label for="rangeStart">Von
+        <input id="rangeStart" type="date" required>
+      </label>
+      <label for="rangeEnd">Bis
+        <input id="rangeEnd" type="date" required>
+      </label>
+    </div>
+    <button id="calculateRange" class="secondary" type="button">Auswertung aktualisieren</button>
+    <div id="rangeResult" class="range-result" role="status" aria-live="polite" hidden>
+      <span id="rangeMetricLabel">Kalorien</span>
+      <strong><span id="rangeCalories">0</span> kcal</strong>
+      <p id="rangeAchievement" class="range-achievement"></p>
+      <div id="rangeChart" class="goal-chart" aria-label="Tageskalorien im Vergleich zum Ziel"></div>
+      <div class="goal-legend" aria-label="Legende">
+        <span><i class="legend-bar met"></i> Ziel erreicht</span>
+        <span><i class="legend-bar under"></i> Unter dem Ziel</span>
+        <span><i class="legend-target"></i> Tagesziel</span>
+      </div>
+      <small id="rangeDetails"></small>
+    </div>
+  </section>
+
+  <section class="card panel dashboard-card" data-panel="main">
+    <div class="calorie-row">
+      <div>
+        <div class="calorie-number">
+          <span id="totalCalories">0</span>
+          <small>kcal</small>
+        </div>
+        <div class="goal">Ärztlich vereinbartes Ziel: <span id="dailyGoalDisplay">2.200</span> kcal</div>
+      </div>
+
+      <strong id="remaining">Noch 2.200 kcal bis zum Ziel</strong>
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="macro-grid">
+      <div class="macro">
+        <strong id="protein">0 g</strong>
+        <span>Protein</span>
+      </div>
+
+      <div class="macro">
+        <strong id="carbs">0 g</strong>
+        <span>Kohlenhydrate</span>
+      </div>
+
+      <div class="macro">
+        <strong id="fat">0 g</strong>
+        <span>Fett</span>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="card panel input-card" data-panel="main" aria-labelledby="analysisStartTitle">
+    <h2 id="analysisStartTitle">Mahlzeit sprechen</h2>
+    <p class="notice">Beschreibe Lebensmittel und bekannte Mengen. Die Beschreibung hat bei einer kombinierten Analyse Vorrang vor dem Foto.</p>
+    <div class="primary-actions">
+      <button id="speechButton" class="speech-button" type="button">🎙️ Aufnahme starten</button>
+      <button id="textAnalysisButton" class="analysis-choice" type="button">Textsuche analysieren</button>
+    </div>
+    <p id="speechState" class="notice" role="status">Sprachbefehl zum Löschen: „Eingabe löschen“.</p>
+    <label for="mealSearchText">Erkannter oder eingegebener Text</label>
+    <textarea id="mealSearchText" rows="4" maxlength="500" placeholder="Zum Beispiel: Zwei Eier mit einer Scheibe Vollkornbrot"></textarea>
+    <div class="speech-actions">
+      <button id="clearSpeechButton" class="secondary danger-secondary" type="button">Text löschen</button>
+    </div>
+  </section>
+
+  <section class="card panel photo-panel" data-panel="photo" aria-labelledby="photoTitle">
+    <h2 id="photoTitle">Fotoanalyse</h2>
+    <p class="notice">Die Fotoanalyse benötigt Internet. Optional kannst du Lebensmittel und Mengen beschreiben; diese Beschreibung wird zusammen mit dem Foto ausgewertet.</p>
+    <label for="photoDescription">Beschreibung zum Foto (optional)</label>
+    <textarea id="photoDescription" rows="4" maxlength="500" placeholder="Zum Beispiel: Pasta mit Tomatensoße, etwa ein halber Teller"></textarea>
+    <button class="camera-button photo-action" id="cameraButton" type="button">📷 Foto analysieren</button>
+    <p class="notice">Nach dem ersten Foto kannst du im Ergebnis ein zweites Foto ergänzen, um die Mengenschätzung zu verbessern.</p>
+  </section>
+
+
+  <section class="card panel analysis" data-panel="main photo" id="analysisCard">
+
+    <h2>Text-/Fotoanalyse</h2>
+
+    <img id="preview" class="preview" alt="Mahlzeit">
+    <img id="previewSecond" class="preview" alt="Mahlzeit aus zweiter Perspektive">
+
+    <div class="status" id="status" role="status" aria-live="polite">
+      🔍 Mahlzeit wird analysiert …
+    </div>
+
+    <div id="result">
+      <p>
+        Erkannte Lebensmittel und geschätzte Mengen.
+        Du kannst Namen und Grammangaben direkt korrigieren.
+      </p>
+
+      <p id="analysisNote" class="notice"></p>
+      <div id="correctionPanel" class="correction">
+        <label for="mealHint">Stimmt die Erkennung nicht? Mahlzeit selbst beschreiben</label>
+        <textarea id="mealHint" rows="3" maxlength="500" placeholder="Zum Beispiel: Kartoffelauflauf mit Käse und Schinken, etwa ein halber Teller"></textarea>
+        <button id="reanalyzeButton" class="reanalyze-button" type="button">Beschreibung übernehmen und neu analysieren</button>
+      </div>
+      <div id="foodList"></div>
+
+      <div class="analysis-total">
+        <span>Gesamt</span>
+        <span id="analysisCalories">0 kcal</span>
+      </div>
+
+      <p id="saveDate" class="notice"></p>
+      <button class="save-button" id="saveButton" type="button">
+        Mahlzeit speichern
+      </button>
+    </div>
+    <button id="secondPhotoButton" class="secondary" type="button" disabled>📷 Zweites Foto ergänzen</button>
+    <input id="secondPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" hidden>
+    <button class="secondary" id="cancelButton" type="button">Verwerfen</button>
+  </section>
+  <section class="card panel meals-card" data-panel="main">
+    <div class="section-title">
+      <h2 id="dayTitle">Heute</h2>
+    </div>
+
+    <div id="mealList"></div>
+  </section>
+  <section class="card panel data-panel" data-panel="data" aria-label="Sicherung">
+    <h2>Deine Daten</h2>
+    <p class="notice">Mahlzeiten bleiben auf diesem Gerät. CSV-Sicherungen enthalten Datum und Uhrzeit der Erfassung. Sichere sie regelmäßig in „Dateien“.</p>
+    <button id="exportAll" class="secondary" type="button">Alle Tage als CSV sichern</button>
+    <button id="importButton" class="secondary" type="button">CSV importieren</button>
+    <button id="protectStorage" class="secondary" type="button">Gerätespeicher anfragen</button>
+    <input id="csvInput" type="file" accept=".csv,text/csv" hidden>
+    <p class="notice">Eine vorhandene meals.csv aus der bisherigen Server-App kannst du hier importieren. Vorhandene Mahlzeiten werden nicht überschrieben.</p>
+  </section>
+  <section id="settings" class="card panel settings-panel" data-panel="settings">
+    <form id="goalForm">
+      <h3>Tagesziel</h3>
+      <p class="notice">Das gewünschte Kalorienziel nach Rücksprache mit Arzt oder Ernährungsfachkraft eintragen.</p>
+      <label for="dailyGoal">Ärztlich vereinbartes Tagesziel in kcal</label>
+      <input id="dailyGoal" type="number" min="500" max="10000" step="50" inputmode="numeric" required>
+      <button class="secondary" type="submit">Tagesziel speichern</button>
+    </form>
+    <form id="settingsForm">
+      <h3>Fotoanalyse</h3>
+      <p class="notice">Für die Fotoanalyse wird dein Foto direkt an OpenAI gesendet. Es gelten die Kosten deines API-Kontos.</p>
+      <label for="apiKey">Dein OpenAI-API-Schlüssel</label>
+      <input id="apiKey" type="password" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="API-Schlüssel einfügen" required>
+      <label for="model">Modell</label>
+      <select id="model" required>
+        <option value="gpt-6-sol" selected>GPT-6 Sol – empfohlen</option>
+        <option value="gpt-6-astra">GPT-6 Astra – höchste Qualität</option>
+        <option value="gpt-6-luna">GPT-6 Luna – günstig</option>
+      </select>
+      <p class="notice">Sol ist die Vorgabe. Astra kann schwierige Bilder besser auswerten, kostet pro Analyse aber deutlich mehr.</p>
+      <label for="portionSize">Standard-Portionsgröße</label>
+      <select id="portionSize">
+        <option value="">Nicht angegeben</option>
+        <option value="small">Kleine Portion</option>
+        <option value="medium" selected>Mittlere Portion</option>
+        <option value="large">Große Portion</option>
+      </select>
+      <label class="checkbox"><input id="rememberKey" type="checkbox"> Schlüssel auf diesem Gerät merken</label>
+      <p class="notice">Ohne Häkchen bleibt der Schlüssel nur bis zum Neuladen verfügbar. Mit Häkchen liegt er unverschlüsselt im Website-Speicher; verwende das nur auf deinem persönlichen Gerät.</p>
+      <button class="secondary" type="submit">Einstellungen übernehmen</button>
+      <button id="forgetKey" class="secondary" type="button">Schlüssel entfernen</button>
+      <p class="notice" id="keyState"></p>
+    </form>
+    <h3>Safari-Startbildschirm</h3>
+    <p class="notice">Diese Seite in Safari über HTTPS öffnen → Teilen → Zum Home-Bildschirm hinzufügen. Das Icon „Didi Safari“ öffnet Safari im Browsermodus; die Adressleiste bleibt sichtbar. Safari-Daten werden nicht automatisch mit der Android-Standalone-App synchronisiert.</p>
+    <p id="offlineState" class="notice" role="status">Offline-Start wird vorbereitet …</p>
+  </section>
+  <p class="notice footer-notice">Zur Analyse werden dein Text und dein Foto an OpenAI gesendet. Kalorien und Nährwerte sind Schätzungen. Mahlzeiten werden lokal auf diesem Gerät gespeichert und sind über den Kalender abrufbar. CSV dient als Sicherung und zum Übertragen.</p>
+</div>
+
+
+<input
+  type="file"
+  id="photoInput"
+  accept="image/jpeg,image/png,image/webp"
+  capture="environment"
+/>
+
+<script src="../app.js" type="module"></script>
+</body>
+</html>

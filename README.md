@@ -43,6 +43,8 @@ automatisch bei Änderungen am Branch `main` und kann zusätzlich manuell gestar
 Der Workflow veröffentlicht ausschließlich die öffentliche App aus `public/`, niemals `.env` oder CSV-Daten.
 Die alternative Variante wird beim Build nach `public/alternative/` kopiert und ist unter
 <https://mucki2710.github.io/didi-kalorien/alternative/> erreichbar.
+Für ältere iPhones gibt es zusätzlich den Safari-Browserstart unter
+<https://mucki2710.github.io/didi-kalorien/alternative/safari/>; Android verwendet weiterhin die Standalone-Version.
 Relative Dateipfade unterstützen auch URLs wie `https://name.github.io/didi-kalorien/`.
 Jeder Push auf `main` startet den Workflow automatisch; manuelles Starten ist nur zum
 Wiederholen einer Veröffentlichung nötig. Für Änderungen an der Haupt-App die Cache-Version

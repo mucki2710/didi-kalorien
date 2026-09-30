@@ -1,5 +1,5 @@
-const CACHE = 'didi-alternative-v10';
-const ASSETS = ['./', './index.html', './styles.css', './app.js', './csv.js', './storage.js', './openai.js', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
+const CACHE = 'didi-alternative-v13';
+const ASSETS = ['./', './index.html', './styles.css', './app.js', './csv.js', './storage.js', './openai.js', './manifest.webmanifest', './icon-192.png', './icon-512.png', './safari/', './safari/index.html', './safari/manifest.webmanifest'];
 const INSTALL_REQUESTS = ASSETS.map(path => new Request(new URL(path, self.registration.scope), { cache: 'reload' }));
 self.addEventListener('install', event => {
   event.waitUntil(Promise.all([
